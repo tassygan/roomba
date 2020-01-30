@@ -9,6 +9,7 @@ class Search:
 		self.price = ""
 		self.require = ""
 		self.phone_num = ""
+		self.chat_id = ""
 class Tenant:
 	def __init__(self):
 		self.location = ""
