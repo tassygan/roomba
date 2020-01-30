@@ -7,7 +7,7 @@ from search import Search, Tenant
 
 token = "1012837410:AAFY0lxwBFgWPIbRO-lO_MumXnlYJl-1ReQ"
 bot = telebot.TeleBot(token)
-db = SQL()
+#db = SQL()
 mode = 0
 flat_id = 1
 search = Search()
