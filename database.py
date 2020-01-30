@@ -1,7 +1,10 @@
 import psycopg2
 
+DATABASE_URL = 'postgres://ihnxtolnufgnvx:675ef2a0c99965db312a90aece18a70695340e410956f50ea989d6761e3806ee@ec2-3-220-86-239.compute-1.amazonaws.com:5432/dbu6jnnonf6vfl'
+
 class SQL:
 	def __init__(self):
+		'''
 		self.con = psycopg2.connect(
 		  database = "roomba",
 		  user ="postgres", 
@@ -9,7 +12,33 @@ class SQL:
 		  host="localhost", 
 		  port="5432"
 		)
+		'''
+		self.con = psycopg2.connect(DATABASE_URL, sslmode='require')
 		self.cur = self.con.cursor()
+
+	def create_tables(self):
+		self.cur.execute('''
+			CREATE TABLE searchers (
+				id SERIAL PRIMARY KEY,
+				name TEXT NOT NULL,
+				age INT NOT NULL,
+				sphere TEXT,
+				langs TEXT,
+				interest TEXT,
+				distr TEXT,
+				price TEXT, 
+				require TEXT,
+				phone_num TEXT,
+				chat_id TEXT
+			);
+			CREATE TABLE tenants(
+				id SERIAL PRIMARY KEY,
+				location TEXT,
+				price TEXT,
+				description TEXT,
+				phone_num TEXT
+			);''')
+		self.con.commit()
 	
 	def search_insert(self, search):
 		self.cur.execute('''
