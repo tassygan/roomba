@@ -47,7 +47,18 @@ def callback(call):
 	global mode, search_st, tenant_st, take_st, flat_id
 	if call.message:
 		if call.data == 'search':
-			bot.send_message(call.message.chat.id, 'Введите ваше Имя:')
+			chat_id = str(call.message.chat.id)
+			if db.search_check_chat_id(chat_id) == True:
+				bot.send_message(call.message.chat.id, 'Вы уже заполняли анкету')
+				keyboard = types.InlineKeyboardMarkup()
+				button1 = types.InlineKeyboardButton('Да', callback_data = 'search_delete_true') 
+				button2 = types.InlineKeyboardButton('Нет', callback_data = 'search_delete_false')
+				keyboard.add(button1)
+				keyboard.add(button2)
+				bot.send_message(call.message.chat.id, 'Хотите удалить вашу анкету?', reply_markup = keyboard)
+				return
+			bot.send_message(call.message.chat.id, 'Прошу вас заполнить анкету')
+			bot.send_message(call.message.chat.id, 'Ваши ФИО:')
 			search_st = True
 			mode = 1
 		elif call.data == 'tenant':
@@ -64,14 +75,19 @@ def callback(call):
 			button = types.InlineKeyboardButton('Следующая квартира', callback_data = 'flat_out')
 			keyboard.add(button)
 			bot.send_message(call.message.chat.id, flat[1] + '\n' + flat[2] + '\n' + flat[3] + '\n' + flat[4], reply_markup = keyboard)
+		elif call.data == 'search_delete_true':
+			db.search_delete(str(call.message.chat.id))
+			bot.send_message(call.message.chat.id, 'Ваша анкета удалена')
+
 
 @bot.message_handler(content_types = ['text'])
 def name_insert_data(message):
 	global search, mode, search_st, tenant_st, take_st
 	if search_st == True:	
 		if mode == 1:
-			search.name = message.text;
-			mode = 2;
+			search.chat_id = message.chat.id
+			search.name = message.text
+			mode = 2
 			bot.send_message(message.chat.id, 'Введите ваш возраст:')
 		elif mode == 2: 
 			search.age = int(message.text)
@@ -107,6 +123,7 @@ def name_insert_data(message):
 			bot.send_message(message.chat.id, 'Подбираем вам подходящую квартиру...')
 			time.sleep(3)
 			keyboard = types.InlineKeyboardMarkup();
+			search_st = False
 			button = types.InlineKeyboardButton('Показать квартиру', callback_data = 'flat_out')
 			keyboard.add(button)
 			bot.send_message(message.chat.id, 'Подходящие запросы найдены:', reply_markup = keyboard)
