@@ -39,6 +39,12 @@ class SQL:
 				phone_num TEXT
 			);''')
 		self.con.commit()
+
+	def drop_tables(self):
+		self.cur.execute('''
+			DROP TABLE searchers;
+			DROP TABLE tenants;
+			''')
 	
 	def search_insert(self, search):
 		self.cur.execute('''

@@ -68,6 +68,7 @@ def callback(call):
 		elif call.data == 'flat_out':
 			if flat_id > db.flat_num():
 				bot.send_message(call.message.chat.id, 'Квартиры закончились:(')
+				flat_id = 1
 				return
 			flat = db.flat_out(flat_id)
 			flat_id += 1
