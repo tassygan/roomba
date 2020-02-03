@@ -4,6 +4,7 @@ DATABASE_URL = 'postgres://ihnxtolnufgnvx:675ef2a0c99965db312a90aece18a70695340e
 
 class SQL:
 	def __init__(self):
+		'''
 		self.con = psycopg2.connect(
 		  database = "roomba",
 		  user ="postgres", 
@@ -11,8 +12,8 @@ class SQL:
 		  host="localhost", 
 		  port="5432"
 		)
-		
-		#self.con = psycopg2.connect(DATABASE_URL, sslmode='require')
+		'''
+		self.con = psycopg2.connect(DATABASE_URL, sslmode='require')
 		self.cur = self.con.cursor()
 
 	def create_tables(self):
@@ -66,8 +67,8 @@ class SQL:
 
 	def tenant_insert(self, tenant):
 		self.cur.execute('''
-			INSERT INTO tenants(location, price, description, phone_num) 
-			VALUES (%s, %s, %s, %s)
+			INSERT INTO tenants(location, price, description, phone_num, photo_id) 
+			VALUES (%s, %s, %s, %s, ARRAY['1_1', '1_2', '1_3'])
 			''', (tenant.location, tenant.price, tenant.description, tenant.phone_num))
 		self.con.commit()	
 	
