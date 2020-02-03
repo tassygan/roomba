@@ -36,7 +36,8 @@ class SQL:
 				location TEXT,
 				price TEXT,
 				description TEXT,
-				phone_num TEXT
+				phone_num TEXT,
+				photo_id TEXT[]
 			);''')
 		self.con.commit()
 

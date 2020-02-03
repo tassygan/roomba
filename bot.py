@@ -52,11 +52,10 @@ def callback(call):
 			button = types.InlineKeyboardButton('Следующая квартира', callback_data = 'flat_out')
 			keyboard.add(button)
 			bot.send_message(call.message.chat.id, 'Расположение квартиры: '+ flat[1] + '\n' + 'Цена аренды: '+ flat[2] + '\n' +'Описание: ' +flat[3] + '\n' + 'Номер телефона: ' + flat[4], reply_markup = keyboard)
-			if flat[5] != null:
-				for photo_id in flat[5]:
-					photo_id += '.jpg'
-					img = open(photo_id, 'rb')
-					bot.send_photo(call.message.chat.id, img)
+			for photo_id in flat[5]:
+				photo_id += '.jpg'
+				img = open(photo_id, 'rb')
+				bot.send_photo(call.message.chat.id, img)
 		elif call.data == 'search_delete_true':
 			db.search_delete(str(call.message.chat.id))
 			bot.send_message(call.message.chat.id, 'Ваша анкета удалена')
