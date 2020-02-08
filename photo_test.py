@@ -1,6 +1,8 @@
 import telebot
 import cloudinary
 import urllib3
+import requests
+from telebot import types
 from PIL import Image
 from io import StringIO
 from telebot import types
@@ -19,11 +21,27 @@ search = Search()
 
 token = "1012837410:AAFY0lxwBFgWPIbRO-lO_MumXnlYJl-1ReQ"
 bot = telebot.TeleBot(token)
+photo_id = ""
 
 @bot.message_handler(commands = ['start'])
 def photo_rep(message):
-	photo_url = cloudinary.CloudinaryImage("samples/people/bicycle.jpg").build_url()
-	img = Image.open(urllib3.urlopen(photo_url))
-	bot.send_photo(message.chat.id, img)
+	global photo_id
+	#photo_url = cloudinary.CloudinaryImage("samples/people/bicycle.jpg").build_url()
+	#img = Image.open(urllib3.urlopen(photo_url))
+	#bot.send_photo(message.chat.id, img)
+	bot.send_message(message.chat.id, 'Hello! Send me a photo')
+
+@bot.message_handler(content_types = ['photo'])
+def send_photo(message):
+	global photo_id
+	bot.send_photo(message.chat.id, message.photo)
+	keyboard = types.InlineKeyboardMarkup()
+	button = types.InlineButtonMarkup('Get photo', callback_data = 'photo')
+
+@bot.message_handler(func=lambda call:True)
+def photo(call):
+	global photo_id
+	img = open(photo_id, 'rb')
+	bot.send_photo(call.message.chat.id, img)
 
 bot.polling(none_stop = True)
