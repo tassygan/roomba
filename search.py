@@ -6,13 +6,17 @@ class Search:
 		self.langs = ""
 		self.interest = ""
 		self.distr = ""
-		self.price = ""
+		self.price = 0
 		self.require = ""
 		self.phone_num = ""
 		self.chat_id = ""
 class Tenant:
 	def __init__(self):
-		self.location = ""
-		self.price = ""
+		self.distr = ""
+		self.address = ""
+		self.price = 0
+		self.room_num = 0
+		self.sleep_places = 0
 		self.description = ""
 		self.phone_num = ""
+		self.chat_id = ""

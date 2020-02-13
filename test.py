@@ -1,3 +1,3 @@
-flat = {'1', '2', '3'}
-print(flat[3])
-print(flat.__sizeof__())
+s = '1000 tenge'
+for a in s:
+	print(a)

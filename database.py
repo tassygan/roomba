@@ -17,7 +17,7 @@ class SQL:
 		#heroku----------------------
 		#self.con = psycopg2.connect(DATABASE_URL, sslmode='require')
 		#----------------------------
-		
+
 		self.cur = self.con.cursor()
 
 	def create_tables(self):
@@ -30,17 +30,21 @@ class SQL:
 				langs TEXT,
 				interest TEXT,
 				distr TEXT,
-				price TEXT, 
+				price INT, 
 				require TEXT,
 				phone_num TEXT,
 				chat_id TEXT
 			);
 			CREATE TABLE tenants(
 				id SERIAL PRIMARY KEY,
-				location TEXT,
-				price TEXT,
+				distr TEXT,
+				address TEXT,
+				price INT,
+				room_num INT,
+				sleep_places INT,
 				description TEXT,
 				phone_num TEXT,
+				chat_id TEXT,
 				photo_id TEXT[]
 			);''')
 		self.con.commit()
@@ -72,11 +76,14 @@ class SQL:
 
 	def tenant_insert(self, tenant):
 		self.cur.execute('''
-			INSERT INTO tenants(location, price, description, phone_num, photo_id) 
-			VALUES (%s, %s, %s, %s, ARRAY['1_1', '1_2', '1_3'])
-			''', (tenant.location, tenant.price, tenant.description, tenant.phone_num))
+			INSERT INTO tenants(distr,address, price, room_num, sleep_places, description, phone_num, chat_id, photo_id) 
+			VALUES (%s, %s, %s, %s, %s, %s, %s, %s, ARRAY['1_1', '1_2', '1_3'])
+			''', (tenant.distr, tenant.address, tenant.price, tenant.room_num, \
+				tenant.sleep_places, tenant.description, tenant.phone_num, tenant.chat_id))
 		self.con.commit()	
-	
+	def get_matches(self, search):
+		self.cur.execute('SELECT * FROM tenants WHERE %s >= price AND %s = distr', (search.price, search.distr))
+		return self.cur.fetchall()
 	def close(self):
 		self.con.close()
 	

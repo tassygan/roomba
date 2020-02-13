@@ -1,6 +1,7 @@
 import telebot
 import random
 import time
+import functions
 from telebot import types
 from database import SQL
 from search import Search, Tenant
@@ -10,8 +11,10 @@ bot = telebot.TeleBot(token)
 db = SQL()
 mode = 0
 flat_id = 1
+cur_flat = 0
 search = Search()
 tenant = Tenant()
+flat_matches = ""
 
 search_st = False
 take_st = False
@@ -39,33 +42,52 @@ def start(message):
 
 @bot.callback_query_handler(func=lambda call:True)
 def callback(call):
-	global mode, search_st, tenant_st, take_st, flat_id
+	global mode, search_st, tenant_st, take_st, flat_id, flat_matches, cur_flat
 	if call.message:
-		if call.data == 'flat_out':
-			if flat_id > db.flat_num():
-				bot.send_message(call.message.chat.id, 'Квартиры закончились')
-				flat_id = 1
-				return
+		if call.data == 'flat_out' or call.data == 'flat_prev':
+			bot.delete_message(call.message.chat.id, call.message.message_id)
+			if call.data == 'flat_prev':
+				flat_id -= 2
 			flat = db.flat_out(flat_id)
 			flat_id += 1
 			keyboard = types.InlineKeyboardMarkup()
-			button = types.InlineKeyboardButton('Следующая квартира', callback_data = 'flat_out')
-			keyboard.add(button)
-			bot.send_message(call.message.chat.id, 'Расположение квартиры: '+ flat[1] + '\n' + 'Цена аренды: '+ flat[2] + '\n' +'Описание: ' +flat[3] + '\n' + 'Номер телефона: ' + flat[4], reply_markup = keyboard)
+			if flat_id <= db.flat_num():
+				button = types.InlineKeyboardButton('Следующая квартира', callback_data = 'flat_out')
+				keyboard.add(button)
+			if flat_id > 2:
+				button = types.InlineKeyboardButton('Предыдущая квартира', callback_data = 'flat_prev')
+				keyboard.add(button)
+			bot.send_message(call.message.chat.id, '*Расположение квартиры:* '+ flat[1] + ' район, ' + flat[2] + '\n' + \
+			 '*Цена аренды:* '+ str(flat[3]) + '\n' + '*Количество комнат:* ' + str(flat[4]) + '\n' + \
+			 '*Количество спальных мест:* ' + str(flat[5]) + '\n' + '*Описание:* '+ flat[6] + '\n' + \
+			 '*Номер телефона:* ' + flat[7], reply_markup = keyboard, parse_mode = 'Markdown')
 			'''
 			for photo_id in flat[5]:
 				photo_id += '.jpg'
 				img = open(photo_id, 'rb')
 				bot.send_photo(call.message.chat.id, img)
 			'''
+		elif call.data == 'matches_out':
+			flat = flat_matches[cur_flat]
+			cur_flat += 1
+			keyboard = types.InlineKeyboardMarkup()
+			if cur_flat + 1 == len(flat_matches):
+				button = types.InlineKeyboardButton('Следующая квартира', callback_data = 'matches_out')
+				keyboard.add(button)
+			bot.send_message(call.message.chat.id, '*Расположение квартиры:* '+ flat[1] + ' район, ' + flat[2] + '\n' + \
+			 '*Цена аренды:* '+ str(flat[3]) + '\n' + '*Количество комнат:* ' + str(flat[4]) + '\n' + \
+			 '*Количество спальных мест:* ' + str(flat[5]) + '\n' + '*Описание:* '+ flat[6] + '\n' + \
+			 '*Номер телефона:* ' + flat[7], reply_markup = keyboard, parse_mode = 'Markdown')
 		elif call.data == 'search_delete_true':
 			db.search_delete(str(call.message.chat.id))
 			bot.send_message(call.message.chat.id, 'Ваша анкета удалена')
-
+		elif call.data == '100' or '150' or '200' or '250' or '300':
+			filter_price = int(call.data)*1000;
+			
 
 @bot.message_handler(content_types = ['text'])
 def name_insert_data(message):
-	global search, mode, search_st, tenant_st, take_st
+	global search, mode, search_st, tenant_st, take_st, flat_matches, cur_flat
 	if message.text == 'Добавить новое объявление':
 		keyboard = types.ReplyKeyboardMarkup(True, True)
 		keyboard.row('Жилье','Людей для заселения')
@@ -120,11 +142,13 @@ def name_insert_data(message):
 		bot.send_message(message.chat.id, 'Показать квартиру?', reply_markup = keyboard)
 	elif message.text == 'Я предлагаю жилье целиком' or message.text == 'Я предлагаю комнату':
 		keyboard = types.ReplyKeyboardMarkup(True, False)
+		keyboard.row('Алматинский', 'Байконурский')
+		keyboard.row('Есильский', 'Сарыаркинский')
 		keyboard.row('Назад в меню')
-		bot.send_message(message.chat.id, 'Расположение вашей квартиры:', reply_markup = keyboard)
+		bot.send_message(message.chat.id, 'В каком районе находится ваша квартира?', reply_markup = keyboard)
 		tenant_st = True
 		mode = 1
-	elif message.text == 'Показать квартиры':
+	elif message.text == 'Показать квартиры' or message.text == 'Назад':
 		keyboard = types.ReplyKeyboardMarkup(True, False)
 		keyboard.row('Поиск по цене')
 		keyboard.row('Поиск по расположению')
@@ -136,7 +160,19 @@ def name_insert_data(message):
 		button = types.InlineKeyboardButton('Да', callback_data = 'flat_out')
 		keyboard.add(button)
 		bot.send_message(message.chat.id, 'Показать квартиру?', reply_markup = keyboard)
-
+	elif message.text == 'Поиск по цене':
+		keyboard = types.InlineKeyboardMarkup()
+		button = types.InlineKeyboardButton('до 100.000 тенге', callback_data = '100')
+		keyboard.add(button)
+		button = types.InlineKeyboardButton('до 150.000 тенге', callback_data = '150')
+		keyboard.add(button)
+		button = types.InlineKeyboardButton('до 200.000 тенге', callback_data = '200')
+		keyboard.add(button)
+		button = types.InlineKeyboardButton('до 250.000 тенге', callback_data = '250')
+		keyboard.add(button)
+		button = types.InlineKeyboardButton('до 300.000 тенге', callback_data = '300')
+		keyboard.add(button)
+		bot.send_message(message.chat.id, 'Выберите цену:', reply_markup=keyboard)
 	elif search_st == True:	
 		if mode == 1:
 			search.chat_id = message.chat.id
@@ -144,29 +180,56 @@ def name_insert_data(message):
 			mode = 2
 			bot.send_message(message.chat.id, 'Введите ваш возраст:')
 		elif mode == 2: 
-			search.age = int(message.text)
-			mode = 3
-			bot.send_message(message.chat.id, 'Укажите вашу сферу деятельности:')
+			age = message.text
+			if age.isdigit() == True:
+				search.age = int(message.text)
+				mode = 3
+				bot.send_message(message.chat.id, 'Укажите вашу сферу деятельности:')
+			else:
+				bot.send_message(message.chat.id, 'Неправильный ввод! Введите целое число.')
 		elif mode == 3: 
 			search.sphere = message.text
 			mode = 4
-			bot.send_message(message.chat.id, 'Укажите языки, на которых вы говорите:')
-		elif mode == 4: 
-			search.langs = message.text
-			mode = 5
-			bot.send_message(message.chat.id, 'Ваши интересы, хобби, любимые книги и фильмы')
+			keyboard = types.ReplyKeyboardMarkup(True, False)
+			keyboard.row('Казахский', 'Русский', 'Оба языка')
+			keyboard.row('Назад в меню')
+			bot.send_message(message.chat.id, 'Укажите языки, на которых вы говорите:', reply_markup=keyboard)
+		elif mode == 4:
+			lang = message.text
+			if lang == 'Казахский' or lang == 'Русский' or lang == 'Оба языка': 
+				search.langs = message.text
+				mode = 5
+				keyboard = types.ReplyKeyboardMarkup(True, True)
+				keyboard.row('Назад в меню')
+				bot.send_message(message.chat.id, 'Ваши интересы, хобби, любимые книги и фильмы', reply_markup=keyboard)
+			else:
+				bot.send_message(message.chat.id, 'Неправильный ввод!')
 		elif mode == 5: 
 			search.interest = message.text
 			mode = 6
-			bot.send_message(message.chat.id, 'Желаемый район города(рядом с..)')
+			keyboard = types.ReplyKeyboardMarkup(True, False)
+			keyboard.row('Алматинский', 'Байконурский')
+			keyboard.row('Есильский', 'Сарыаркинский')
+			keyboard.row('Назад в меню')
+			bot.send_message(message.chat.id, 'Желаемый район города', reply_markup = keyboard)
 		elif mode == 6: 
-			search.distr = message.text
-			mode = 7
-			bot.send_message(message.chat.id, 'Желательная цена')
-		elif mode == 7: 
-			search.price = message.text
-			mode = 8
-			bot.send_message(message.chat.id, 'Требования к квартире')
+			distr = message.text
+			if distr == 'Алматинский' or distr == 'Байконурский' or distr == 'Есильский' or distr == 'Сарыаркинский':
+				search.distr = message.text
+				mode = 7
+				keyboard = types.ReplyKeyboardMarkup(True, True)
+				keyboard.row('Назад в меню')
+				bot.send_message(message.chat.id, 'Желательная цена (тенге)', reply_markup=keyboard)
+			else:
+				bot.send_message(message.chat.id, 'Неправильный ввод!')
+		elif mode == 7:
+			price = message.text
+			if price.isdigit() == True: 
+				search.price = int(message.text)
+				mode = 8
+				bot.send_message(message.chat.id, 'Требования к квартире')
+			else:
+				bot.send_message(message.chat.id, 'Неправильный ввод! Введите целое число.')
 		elif mode == 8:
 			search.require = message.text
 			mode = 9
@@ -174,58 +237,65 @@ def name_insert_data(message):
 		elif mode == 9:
 			search.phone_num = message.text
 			db.search_insert(search)
-			bot.send_message(message.chat.id, 'Подбираем вам подходящую квартиру...')
+			bot.send_message(message.chat.id, '*Подбираем вам подходящую квартиру...*', parse_mode = "Markdown")
 			bot.send_chat_action(message.chat.id, 'typing')
 			time.sleep(3)
 			keyboard = types.InlineKeyboardMarkup();
 			search_st = False
-			button = types.InlineKeyboardButton('Показать квартиру', callback_data = 'flat_out')
+			button = types.InlineKeyboardButton('Показать квартиры', callback_data = 'matches_out')
 			keyboard.add(button)
+			flat_matches = db.get_matches(search)
 			bot.send_message(message.chat.id, 'Подходящие запросы найдены:', reply_markup = keyboard)
 	elif tenant_st == True:
 		if mode == 1:
-			tenant.location = message.text
-			mode = 2
-			bot.send_message(message.chat.id, 'Цена аренды:')
+			distr = message.text
+			if distr == 'Алматинский' or distr == 'Байконурский' or distr == 'Есильский' or distr == 'Сарыаркинский':
+				tenant.distr = message.text
+				mode = 2
+				keyboard = types.ReplyKeyboardMarkup(True, True)
+				keyboard.row('Назад в меню')
+				bot.send_message(message.chat.id, 'Укажите ваш точный адрес', reply_markup=keyboard)
+			else:
+				bot.send_message(message.chat.id, 'Неправильный ввод!')
 		elif mode == 2:
-			tenant.price = message.text
+			tenant.chat_id = message.chat.id
+			tenant.address = message.text
 			mode = 3
-			bot.send_message(message.chat.id, 'Описание вашей квартиры/комнаты (этаж, площадь, \
-			интернет, мебель, бытовая техника)')
+			bot.send_message(message.chat.id, 'Цена аренды в тенге:')
 		elif mode == 3:
-			tenant.description = message.text
-			mode = 4
-			bot.send_message(message.chat.id, 'Ваш номер телефона:')
+			price = message.text
+			if price.isdigit() == True:
+				tenant.price = int(message.text)
+				mode = 4
+				bot.send_message(message.chat.id, 'Количество комнат в вашей квартире')
+			else:
+				bot.send_message(message.chat.id, 'Неправильный ввод! Введите целое число')
 		elif mode == 4:
+			room_num = message.text
+			if room_num.isdigit() == True:
+				tenant.room_num = int(message.text)
+				mode = 5
+				bot.send_message(message.chat.id, 'Количество спальных мест в вашей квартире')
+			else:
+				bot.send_message(message.chat.id, 'Неправильный ввод! Введите целое число')
+		elif mode == 5:
+			sleep_places = message.text
+			if sleep_places.isdigit() == True:
+				tenant.sleep_places = int(message.text)
+				mode = 6
+				bot.send_message(message.chat.id, 'Описание вашей квартиры/комнаты (этаж, площадь, \
+				интернет, мебель, бытовая техника)')
+			else:
+				bot.send_message(message.chat.id, 'Неправильный ввод! Введите целое число')
+		elif mode == 6:
+			tenant.description = message.text
+			mode = 7
+			bot.send_message(message.chat.id, 'Ваш номер телефона:')
+		elif mode == 7:
 			tenant.phone_num = message.text
 			db.tenant_insert(tenant)
 			bot.send_message(message.chat.id, 'Ваша квартира добавлена!')
 			tenant_st = False
-
-			
-	
-"""
-def age_insert_data(message):
-	age = int(message.text)
-	db.insert_data(name, age)
-	db.close()
-
-@bot.message_handler(content_types = ['text'])
-def name_insert_data(message):
-	name = message.text
-	db.insert_data(name)
-
-@bot.message_handler(content_types = ['text'])
-def game(message):
-	global num
-	mynum = int(message.text)
-	if num == mynum:
-		photo = open('12.png', 'rb')
-		bot.send_photo(message.chat.id, photo)
-	elif mynum > num:
-		bot.send_message(message.chat.id, 'Less...')
-	else:
-		bot.send_message(message.chat.id, 'More...')
-"""
+			mode = 0
 
 bot.polling(none_stop = True)
