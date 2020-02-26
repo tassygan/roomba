@@ -1,16 +1,21 @@
-class Search:
+class Seeker:
 	def __init__(self):
 		self.name = ""
 		self.age = 0
-		self.sphere = ""
-		self.langs = ""
-		self.interest = ""
-		self.distr = ""
-		self.price = 0
-		self.require = ""
+		self.homeland = ""
 		self.phone_num = ""
+		self.gender = ""
+		self.worker_or_student = ""
+		self.study_place = ""
+		self.work_sphere = ""
+		self.sleeping_mode = ""
+		self.langs = ""
+		self.distr = ""
+		self.near_what = ""
+		self.price = 0
+		self.interest = ""
 		self.chat_id = ""
-class Tenant:
+class Offerer:
 	def __init__(self):
 		self.distr = ""
 		self.address = ""
