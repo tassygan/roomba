@@ -10,7 +10,6 @@ DATABASE_URL = os.environ['DATABASE_URL']
 class SQL:
 	def __init__(self):
 		#local host------------------
-		'''
 		self.con = psycopg2.connect(
 		  database = "roomba",
 		  user ="postgres", 
@@ -18,11 +17,10 @@ class SQL:
 		  host="localhost", 
 		  port="5432"
 		)
-		'''
 		#----------------------------
 
 		#heroku----------------------
-		self.con = psycopg2.connect(DATABASE_URL, sslmode='require')
+		#self.con = psycopg2.connect(DATABASE_URL, sslmode='require')
 		#----------------------------
 
 		self.cur = self.con.cursor()
@@ -46,7 +44,8 @@ class SQL:
 				phone_num TEXT,
 				book_flat INT[] DEFAULT ARRAY[0],
 				chat_id TEXT,
-				photo_id TEXT[] DEFAULT ARRAY[0]
+				photo_id TEXT[] DEFAULT ARRAY[0],
+				bad_habits TEXT
 			);
 			CREATE TABLE offerer(
 				id SERIAL PRIMARY KEY,
