@@ -6,3 +6,4 @@ config
 httplib2
 python-gflags
 uritemplate
+google-api-python-client
