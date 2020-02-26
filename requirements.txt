@@ -4,3 +4,5 @@ apiclient
 oauth2client
 config
 httplib2
+python-gflags
+uritemplate
