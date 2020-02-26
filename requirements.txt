@@ -1,2 +1,7 @@
 psycopg2
 pytelegrambotapi
+apiclient
+logging
+oauth2client
+config
+httplib2
