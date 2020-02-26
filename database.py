@@ -1,10 +1,11 @@
 import psycopg2
 import telebot
+import os
 
 token = "1012837410:AAFY0lxwBFgWPIbRO-lO_MumXnlYJl-1ReQ"
 bot = telebot.TeleBot(token)
 
-DATABASE_URL = 'postgres://ihnxtolnufgnvx:675ef2a0c99965db312a90aece18a70695340e410956f50ea989d6761e3806ee@ec2-3-220-86-239.compute-1.amazonaws.com:5432/dbu6jnnonf6vfl'
+DATABASE_URL = os.environ['DATABASE_URL']
 
 class SQL:
 	def __init__(self):
