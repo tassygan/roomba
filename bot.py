@@ -139,14 +139,14 @@ def callback(call):
 
 @bot.message_handler(content_types = ['text'])
 def name_insert_data(message):
-	global seeker, mode, seeker_st, offerer_st, flat_matches, cur_flat, sleep_places_st
+	global seeker, mode, seeker_st, offerer_st, flat_matches, cur_flat, sleep_places_st, cur_profile
 	if message.text == '📋Добавить новое объявление':
 		keyboard = types.ReplyKeyboardMarkup(True, True)
 		keyboard.row('👤Ищу соседей','🏠Предлагаю жилье')
 		keyboard.row('🔙Назад в меню')
 		bot.send_message(message.chat.id, 'Выберите что-то одно:\n1.👤Ищу соседей\n2.🏠Предлагаю жилье', reply_markup = keyboard)
 	elif message.text == '🔙Назад в меню':
-		seeker_st = offerer_st = sleep_places_st = mode = 0
+		seeker_st = offerer_st = sleep_places_st = mode = cur_flat = cur_profile = 0
 		keyboard = types.ReplyKeyboardMarkup(True, True)
 		keyboard.row('📋Добавить новое объявление' )
 		bot.send_message(message.chat.id, 'Главное меню', reply_markup=keyboard)
