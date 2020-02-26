@@ -68,7 +68,7 @@ class SQL:
 	def drop_tables(self):
 		self.cur.execute('''
 			DROP TABLE searchers;
-			DROP TABLE tenant;
+			DROP TABLE tenants;
 			''')
 	
 	def seeker_insert(self, seeker):
