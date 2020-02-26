@@ -1,12 +1,7 @@
 from __future__ import print_function
-from apiclient.http import MediaFileUpload, MediaIoBaseDownload
+#from apiclient.http import MediaFileUpload, MediaIoBaseDownload
 import os, io
 import logging  
-import telegram
-from PIL import Image
-from telegram.ext import Updater
-from telegram.ext import Updater, CommandHandler, CallbackQueryHandler ,MessageHandler  
-from telegram.ext import MessageHandler, Filters  
 from apiclient import discovery 
 from httplib2 import Http  
 from oauth2client import file, client, tools 
