@@ -1,21 +1,19 @@
+from __future__ import print_function
 import telebot
 import time
+import urllib
 from telebot import types
+from telebot.types import InputMediaPhoto
+import photos
 
 token = "1012837410:AAFY0lxwBFgWPIbRO-lO_MumXnlYJl-1ReQ"
 bot = telebot.TeleBot(token)
 
-last_mess = ''
-
-@bot.message_handler(commands = ['start'])
-def start(message):
-	global last_mess
-	keyboard = types.InlineKeyboardMarkup()
-	button1 = types.InlineKeyboardButton('<<123check')
-	button2 = types.InlineKeyboardButton('123check>>')
-	keyboard = ([button1, button2], )
-	last_mess = bot.send_message(message.chat.id, 'Hello!', reply_markup=keyboard)
-	time.sleep(5)
-	bot.delete_message(message.chat.id, last_mess.message_id)
-
-bot.polling(none_stop=True)
+@bot.message_handler(commands=['start'])
+def send_photo(message):
+	file_id = '17RntL3FT86ikmHMhQbm2Grupy2bJvMe3'
+	fh = photos.download_photo(file_id)
+	bot.send_photo(message.chat.id, fh)
+bot.polling()
+while True:
+    time.sleep(0)

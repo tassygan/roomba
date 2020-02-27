@@ -5,8 +5,6 @@ import os
 token = "1012837410:AAFY0lxwBFgWPIbRO-lO_MumXnlYJl-1ReQ"
 bot = telebot.TeleBot(token)
 
-DATABASE_URL = os.environ['DATABASE_URL']
-
 class SQL:
 	def __init__(self):
 		#local host------------------
@@ -20,6 +18,7 @@ class SQL:
 		#----------------------------
 
 		#heroku----------------------
+		#DATABASE_URL = os.environ['DATABASE_URL']
 		#self.con = psycopg2.connect(DATABASE_URL, sslmode='require')
 		#----------------------------
 
@@ -73,11 +72,11 @@ class SQL:
 	def seeker_insert(self, seeker):
 		self.cur.execute('''
 			INSERT INTO seeker(name, age, homeland, phone_num, gender, worker_or_student, study_or_work_place, sleeping_mode, langs, 
-			distr, near_what, price, seeking_for, interest, chat_id, photo_id) 
-			VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+			distr, near_what, price, seeking_for, interest, chat_id, photo_id, bad_habits) 
+			VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 			''', (seeker.name, seeker.age, seeker.homeland, seeker.phone_num, seeker.gender, seeker.worker_or_student, \
 				seeker.study_or_work_place, seeker.sleeping_mode, seeker.langs, seeker.distr, seeker.near_what, seeker.price, \
-				seeker.seeking_for, seeker.interest, seeker.chat_id, seeker.photo_id))
+				seeker.seeking_for, seeker.interest, seeker.chat_id, seeker.photo_id, seeker.bad_habits))
 		self.con.commit()
 
 	def seeker_check_chat_id(self, chat_id):
@@ -154,9 +153,10 @@ class SQL:
 	    return photo_id[0]
 
 	def get_profile_photo(self, prof_id):
-	    self.cur.execute('SELECT photo_id FROM offerer WHERE id = %s', (str(prof_id), ))
-	    photo_id = self.cur.fetchall()
-	    return photo_id[0]
+		self.cur.execute('SELECT photo_id FROM seeker WHERE id = %s', (str(prof_id), ))
+		photo_id = self.cur.fetchall()
+		print(photo_id)
+		return photo_id[0][0][0]
 
 	def close(self):
 		self.con.close()
@@ -168,6 +168,19 @@ class SQL:
 	def flat_num(self):
 		self.cur.execute('SELECT * FROM offerer')
 		return self.cur.rowcount
+
+	def change_name(self, chat_id, name):
+		self.cur.execute('UPDATE seeker SET name = %s WHERE chat_id = %s', (str(name), str(chat_id)))
+		self.con.commit()
+	def change_age(self, chat_id, age):
+		self.cur.execute('UPDATE seeker SET age = %s WHERE chat_id = %s', (age, str(chat_id)))
+		self.con.commit()
+	def change_homeland(self, chat_id, homeland):
+		self.cur.execute('UPDATE seeker SET homeland = %s WHERE chat_id = %s', (homeland, str(chat_id)))
+		self.con.commit()
+	def change_desc(self, chat_id, desc):
+		self.cur.execute('UPDATE seeker SET interest = %s WHERE chat_id = %s', (desc, str(chat_id)))
+		self.con.commit()
 '''
 print("Database opened successfully")
 cur = con.cursor()

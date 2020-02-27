@@ -1,5 +1,6 @@
 import telebot
 import time
+import urllib
 from telebot import types
 from database import SQL
 from users import Seeker, Offerer
@@ -12,6 +13,8 @@ mode = 0
 flat_id = 1
 cur_flat = 0
 cur_profile = 0
+change_st = 0
+last_mess_id = 0
 seeker = Seeker()
 offerer = Offerer()
 flat_matches = ""
@@ -24,8 +27,9 @@ offerer_st = False
 
 @bot.message_handler(commands = ['start'])
 def start(message):
-	keyboard = types.ReplyKeyboardMarkup(True, True)
+	keyboard = types.ReplyKeyboardMarkup(True, False)
 	keyboard.row('📋Добавить новое объявление')
+	keyboard.row('Мои объявления')
 	bot.send_message(message.chat.id, 'roomba - Hайди того самого соседа!\n\n'
 	'@rroomba это:\n\n'
 	'- поиск соседей по интересам\n'
@@ -36,9 +40,16 @@ def start(message):
 	'Для подачи объявления пишите на: @rroomba_info\n'
 	'Правила размещения по ссылке: @rroomba_rules\n\n', reply_markup=keyboard)
 
+@bot.message_handler(commands = ['menu'])
+def main_menu(message):
+	seeker_st = offerer_st = sleep_places_st = mode = cur_flat = cur_profile = 0
+	keyboard = types.ReplyKeyboardMarkup(True, False)
+	keyboard.row('📋Добавить новое объявление')
+	keyboard.row('Мои объявления')
+	bot.send_message(message.chat.id, 'Главное меню', reply_markup=keyboard)
 @bot.callback_query_handler(func=lambda call:True)
 def callback(call):
-	global mode, seeker_st, offerer_st, flat_id, flat_profile_st, flat_matches, cur_flat, sleep_places_st, cur_profile, flat_profiles
+	global mode, seeker_st, offerer_st, flat_id, flat_profile_st, change_st, last_mess_id, flat_matches, cur_flat, sleep_places_st, cur_profile, flat_profiles
 	if call.message:
 		if call.data == 'flat_out' or call.data == 'flat_prev':
 			bot.delete_message(call.message.chat.id, call.message.message_id)
@@ -133,22 +144,77 @@ def callback(call):
 			else: 
 				photo = 'https://drive.google.com/file/d/'+str(photo_id[0][0])+'/view?usp=sharing'
 				bot.send_photo(call.message.chat.id, photo, caption = cap, reply_markup = keyboard, parse_mode = 'Markdown')
-		elif call.data == 'seeker_delete_true':
+		elif call.data == 'delete_profile':
 			db.seeker_delete(str(call.message.chat.id))
 			bot.send_message(call.message.chat.id, 'Ваша анкета удалена')
+		elif call.data == 'change_profile':
+			keyboard = types.InlineKeyboardMarkup()
+			button1 = types.InlineKeyboardButton('Изменить Имя', callback_data = 'change_name')
+			button2 = types.InlineKeyboardButton('Изменить Возраст', callback_data = 'change_age')
+			button3 = types.InlineKeyboardButton('Изменить\nОткуда Родом', callback_data = 'change_homeland')
+			button4 = types.InlineKeyboardButton('Изменить О себе', callback_data = 'change_desc')
+			keyboard.row(button1, button2)
+			keyboard.row(button3, button4)
+			bot.edit_message_reply_markup(chat_id = call.message.chat.id, message_id = call.message.message_id, reply_markup = keyboard)
+		elif call.data == 'change_name':
+			bot.send_message(call.message.chat.id, 'Введите новое Имя')
+			change_st = 1
+			last_mess_id = call.message.message_id
+		elif call.data == 'change_age':
+			bot.send_message(call.message.chat.id, 'Введите новый возраст\n(целое число)')
+			change_st = 2
+			last_mess_id = call.message.message_id
+		elif call.data == 'change_homeland':
+			bot.send_message(call.message.chat.id, 'Введите новое место откуда Вы родом\n(регион, город)')
+			change_st = 3
+			last_mess_id = call.message.message_id
+		elif call.data == 'change_desc':
+			bot.send_message(call.message.chat.id, 'Напишите новое описание о себе')
+			change_st = 4
+			last_mess_id = call.message.message_id
+
 
 @bot.message_handler(content_types = ['text'])
 def name_insert_data(message):
-	global seeker, mode, seeker_st, offerer_st, flat_matches, cur_flat, sleep_places_st, cur_profile
+	global seeker, mode, seeker_st, offerer_st, flat_matches, cur_flat, sleep_places_st, cur_profile, last_mess_id, change_st
 	if message.text == '📋Добавить новое объявление':
-		keyboard = types.ReplyKeyboardMarkup(True, True)
+		keyboard = types.ReplyKeyboardMarkup(True, False)
 		keyboard.row('👤Ищу соседей','🏠Предлагаю жилье')
 		keyboard.row('🔙Назад в меню')
 		bot.send_message(message.chat.id, 'Выберите что-то одно:\n1.👤Ищу соседей\n2.🏠Предлагаю жилье', reply_markup = keyboard)
+	elif message.text == 'Мои объявления':
+		profile = db.get_profile(message.chat.id)
+		if profile is None:
+			bot.send_message(message.chat.id, 'У вас нет активных объявлений.')
+			return
+		if profile[2] > 1000:
+			age = str(int(profile[2]/100)) + '-' + str(profile[2]%100)
+		else:
+			age = profile[2]
+		if profile[5] == 'student':
+			work = 'студент'
+		else:
+			work = 'работник'
+		cap = '*Имя:* '+ profile[1] + '\n' + '*Возраст:* ' + str(age) + '\n' + \
+		 '*Откуда родом:* '+ profile[3] + '\n' + '*Пол:* ' + profile[4] + '\n' + \
+		 '*Работник или студент:* ' + work + '\n' + '*Место:* ' + profile[6] + \
+		 '\n' + '*Режим сна:* '+ profile[7] + '\n' + '*Языки:* ' + profile[8] + '\n' + '*О себе:* ' + profile[13]
+		photo_id = db.get_profile_photo(profile[0])
+		keyboard = types.InlineKeyboardMarkup()
+		button = types.InlineKeyboardButton('Изменить объявление', callback_data = 'change_profile')
+		keyboard.add(button)
+		button = types.InlineKeyboardButton('Удалить объявление', callback_data = 'delete_profile')
+		keyboard.add(button)
+		if photo_id == '0':
+			bot.send_message(message.chat.id, cap, reply_markup = keyboard, parse_mode = 'Markdown')
+		else: 
+			photo = photos.download_photo(photo_id)
+			bot.send_photo(message.chat.id, photo, caption = cap, reply_markup=keyboard, parse_mode = 'Markdown')
 	elif message.text == '🔙Назад в меню':
 		seeker_st = offerer_st = sleep_places_st = mode = cur_flat = cur_profile = 0
-		keyboard = types.ReplyKeyboardMarkup(True, True)
-		keyboard.row('📋Добавить новое объявление' )
+		keyboard = types.ReplyKeyboardMarkup(True, False)
+		keyboard.row('📋Добавить новое объявление')
+		keyboard.row('Мои объявления')
 		bot.send_message(message.chat.id, 'Главное меню', reply_markup=keyboard)
 	elif message.text == '👤Ищу соседей':
 		chat_id = str(message.chat.id)
@@ -340,25 +406,38 @@ def name_insert_data(message):
 				seeker.langs = message.text
 				mode += 1
 				keyboard = types.ReplyKeyboardMarkup(True, False)
-				keyboard.row('Алматинский', 'Байконурский')
-				keyboard.row('Есильский', 'Сарыаркинский')
+				keyboard.row('Курю/Не пью', 'Не курю/Пью')
+				keyboard.row('Не курю/Не пью', 'Курю/Пью')
 				keyboard.row('🔙Назад в меню')
-				bot.send_message(message.chat.id, 'Желаемый район города', reply_markup = keyboard)
+				bot.send_message(message.chat.id, 'Вредные привычки', reply_markup=keyboard)
 			else:
 				bot.send_message(message.chat.id, 'Неправильный ввод!')
 		elif mode == 9:
+			seeker.bad_habits = message.text
+			mode += 1
+			keyboard = types.ReplyKeyboardMarkup(True, True)
+			keyboard.row('Алматинский', 'Байконурский')
+			keyboard.row('Есильский', 'Сарыаркинский')
+			keyboard.row('🔙Назад в меню')
+			bot.send_message(message.chat.id, 'Желаемый район города', reply_markup = keyboard)
+		elif mode == 10:
 			distr = message.text
 			if distr == 'Алматинский' or distr == 'Байконурский' or distr == 'Есильский' or distr == 'Сарыаркинский':
 				seeker.distr = message.text
 				mode += 1
-				keyboard = types.ReplyKeyboardMarkup(True, True)
-				keyboard.row('до 20.000 тенге', 'от 20.000 до 30.000 тенге')
-				keyboard.row('от 30.000 до 40.000 тенге', 'от 40.000 до 50.000 тенге')
-				keyboard.row('выше 50.000 тенге', '🔙Назад в меню')
-				bot.send_message(message.chat.id, 'Желательная цена', reply_markup=keyboard)
+				bot.send_message(message.chat.id, 'Уточните возле чего вам удобно жить(название \
+				микрорайона, магазин, бизнес-центр, пересечение улиц, достопримечательность)')
 			else:
 				bot.send_message(message.chat.id, 'Неправильный ввод!')
-		elif mode == 10:
+		elif mode == 11:
+			seeker.near_what = message.text
+			mode += 1
+			keyboard = types.ReplyKeyboardMarkup(True, True)
+			keyboard.row('до 20.000 тенге', 'от 20.000 до 30.000 тенге')
+			keyboard.row('от 30.000 до 40.000 тенге', 'от 40.000 до 50.000 тенге')
+			keyboard.row('выше 50.000 тенге', '🔙Назад в меню')
+			bot.send_message(message.chat.id, 'Желательная цена', reply_markup=keyboard)
+		elif mode == 12:
 			seeker.price = message.text
 			keyboard = types.ReplyKeyboardMarkup(True, True)
 			keyboard.row('Отдельную комнату', 'Можно с кем-нибудь в комнате')
@@ -366,15 +445,15 @@ def name_insert_data(message):
 			keyboard.row('🔙Назад в меню')
 			bot.send_message(message.chat.id, 'Я ищу...', reply_markup=keyboard)
 			mode += 1
-		elif mode == 11:
+		elif mode == 13:
 			seeker.seeking_for = message.text
 			mode += 1
 			bot.send_message(message.chat.id, 'Расскажите о себе (интересы, хобби, путешествия, книги, фильмы)')
-		elif mode == 12:
+		elif mode == 14:
 			seeker.interest = message.text
 			mode += 1
-			bot.send_message(message.chat.id, 'Введите ваш номер телефона (пример: 8-ххх-ххх-хх-хх)')
-		elif mode == 13:
+			bot.send_message(message.chat.id, 'Введите ваш номер телефона\n(пример: 8-ххх-ххх-хх-хх)')
+		elif mode == 15:
 			num = message.text
 			digits = 0
 			correct = True
@@ -391,7 +470,7 @@ def name_insert_data(message):
 			seeker.phone_num = message.text
 			bot.send_message(message.chat.id, 'Отправьте своё селфи')
 			mode += 1
-		elif mode == 14:
+		elif mode == 16:
 			bot.send_message(message.chat.id, 'Загрузите фотографию')
 	elif offerer_st == True:
 		if mode == 1:
@@ -444,6 +523,131 @@ def name_insert_data(message):
 			bot.send_message(message.chat.id, 'Загрузите фото вашей квартиры')
 		elif mode == 8:
 			bot.send_message(message.chat.id, 'Загрузите фото!')
+	elif change_st > 0:
+		if change_st == 1:
+			name = message.text
+			db.change_name(message.chat.id, name)
+			bot.send_message(message.chat.id, 'Ваше Имя успешно изменено!')
+			profile = db.get_profile(message.chat.id)
+			if profile[2] > 1000:
+				age = str(int(profile[2]/100)) + '-' + str(profile[2]%100)
+			else:
+				age = profile[2]
+			if profile[5] == 'student':
+				work = 'студент'
+			else:
+				work = 'работник'
+			keyboard = types.InlineKeyboardMarkup()
+			button1 = types.InlineKeyboardButton('Изменить Имя', callback_data = 'change_name')
+			button2 = types.InlineKeyboardButton('Изменить Возраст', callback_data = 'change_age')
+			button3 = types.InlineKeyboardButton('Изменить\nОткуда Родом', callback_data = 'change_homeland')
+			button4 = types.InlineKeyboardButton('Изменить О себе', callback_data = 'change_desc')
+			keyboard.row(button1, button2)
+			keyboard.row(button3, button4)
+			cap = '*Имя:* '+ profile[1] + '\n' + '*Возраст:* ' + str(age) + '\n' + \
+			 '*Откуда родом:* '+ profile[3] + '\n' + '*Пол:* ' + profile[4] + '\n' + \
+			 '*Работник или студент:* ' + work + '\n' + '*Место:* ' + profile[6] + \
+			 '\n' + '*Режим сна:* '+ profile[7] + '\n' + '*Языки:* ' + profile[8] + '\n' + '*О себе:* ' + profile[13]
+			photo_id = db.get_profile_photo(profile[0])
+			if photo_id == '0':
+				bot.edit_message_text(chat_id = message.chat.id, message_id = last_mess_id, text = cap, reply_markup = keyboard, parse_mode = 'Markdown')
+			else: 
+				bot.edit_message_caption(chat_id = message.chat.id, message_id = last_mess_id, caption = cap, reply_markup=keyboard, parse_mode = 'Markdown')
+			change_st = 0
+		elif change_st == 2:
+			age = message.text
+			if not age.isdigit():
+				bot.send_message(message.chat.id, 'Введите целое число!')
+				return
+			db.change_age(message.chat.id, age)
+			bot.send_message(message.chat.id, 'Ваш возраст успешно изменен!')
+			profile = db.get_profile(message.chat.id)
+			if profile[2] > 1000:
+				age = str(int(profile[2]/100)) + '-' + str(profile[2]%100)
+			else:
+				age = profile[2]
+			if profile[5] == 'student':
+				work = 'студент'
+			else:
+				work = 'работник'
+			keyboard = types.InlineKeyboardMarkup()
+			button1 = types.InlineKeyboardButton('Изменить Имя', callback_data = 'change_name')
+			button2 = types.InlineKeyboardButton('Изменить Возраст', callback_data = 'change_age')
+			button3 = types.InlineKeyboardButton('Изменить\nОткуда Родом', callback_data = 'change_homeland')
+			button4 = types.InlineKeyboardButton('Изменить О себе', callback_data = 'change_desc')
+			keyboard.row(button1, button2)
+			keyboard.row(button3, button4)
+			cap = '*Имя:* '+ profile[1] + '\n' + '*Возраст:* ' + str(age) + '\n' + \
+			 '*Откуда родом:* '+ profile[3] + '\n' + '*Пол:* ' + profile[4] + '\n' + \
+			 '*Работник или студент:* ' + work + '\n' + '*Место:* ' + profile[6] + \
+			 '\n' + '*Режим сна:* '+ profile[7] + '\n' + '*Языки:* ' + profile[8] + '\n' + '*О себе:* ' + profile[13]
+			photo_id = db.get_profile_photo(profile[0])
+			if photo_id == '0':
+				bot.edit_message_text(chat_id = message.chat.id, message_id = last_mess_id, text = cap, reply_markup = keyboard, parse_mode = 'Markdown')
+			else: 
+				bot.edit_message_caption(chat_id = message.chat.id, message_id = last_mess_id, caption = cap, reply_markup=keyboard, parse_mode = 'Markdown')
+			change_st = 0
+		elif change_st == 3:
+			homeland = message.text
+			db.change_homeland(message.chat.id, homeland)
+			bot.send_message(message.chat.id, 'Ваше место откуда Вы родом успешно изменено!')
+			profile = db.get_profile(message.chat.id)
+			if profile[2] > 1000:
+				age = str(int(profile[2]/100)) + '-' + str(profile[2]%100)
+			else:
+				age = profile[2]
+			if profile[5] == 'student':
+				work = 'студент'
+			else:
+				work = 'работник'
+			keyboard = types.InlineKeyboardMarkup()
+			button1 = types.InlineKeyboardButton('Изменить Имя', callback_data = 'change_name')
+			button2 = types.InlineKeyboardButton('Изменить Возраст', callback_data = 'change_age')
+			button3 = types.InlineKeyboardButton('Изменить\nОткуда Родом', callback_data = 'change_homeland')
+			button4 = types.InlineKeyboardButton('Изменить О себе', callback_data = 'change_desc')
+			keyboard.row(button1, button2)
+			keyboard.row(button3, button4)
+			cap = '*Имя:* '+ profile[1] + '\n' + '*Возраст:* ' + str(age) + '\n' + \
+			 '*Откуда родом:* '+ profile[3] + '\n' + '*Пол:* ' + profile[4] + '\n' + \
+			 '*Работник или студент:* ' + work + '\n' + '*Место:* ' + profile[6] + \
+			 '\n' + '*Режим сна:* '+ profile[7] + '\n' + '*Языки:* ' + profile[8] + '\n' + '*О себе:* ' + profile[13]
+			photo_id = db.get_profile_photo(profile[0])
+			if photo_id == '0':
+				bot.edit_message_text(chat_id = message.chat.id, message_id = last_mess_id, text = cap, reply_markup = keyboard, parse_mode = 'Markdown')
+			else: 
+				bot.edit_message_caption(chat_id = message.chat.id, message_id = last_mess_id, caption = cap, reply_markup=keyboard, parse_mode = 'Markdown')
+			change_st = 0
+		elif change_st == 4:
+			desc = message.text
+			db.change_desc(message.chat.id, desc)
+			bot.send_message(message.chat.id, 'Ваше описание о себе успешно изменено!')
+			profile = db.get_profile(message.chat.id)
+			if profile[2] > 1000:
+				age = str(int(profile[2]/100)) + '-' + str(profile[2]%100)
+			else:
+				age = profile[2]
+			if profile[5] == 'student':
+				work = 'студент'
+			else:
+				work = 'работник'
+			keyboard = types.InlineKeyboardMarkup()
+			button1 = types.InlineKeyboardButton('Изменить Имя', callback_data = 'change_name')
+			button2 = types.InlineKeyboardButton('Изменить Возраст', callback_data = 'change_age')
+			button3 = types.InlineKeyboardButton('Изменить\nОткуда Родом', callback_data = 'change_homeland')
+			button4 = types.InlineKeyboardButton('Изменить О себе', callback_data = 'change_desc')
+			keyboard.row(button1, button2)
+			keyboard.row(button3, button4)
+			cap = '*Имя:* '+ profile[1] + '\n' + '*Возраст:* ' + str(age) + '\n' + \
+			 '*Откуда родом:* '+ profile[3] + '\n' + '*Пол:* ' + profile[4] + '\n' + \
+			 '*Работник или студент:* ' + work + '\n' + '*Место:* ' + profile[6] + \
+			 '\n' + '*Режим сна:* '+ profile[7] + '\n' + '*Языки:* ' + profile[8] + '\n' + '*О себе:* ' + profile[13]
+			photo_id = db.get_profile_photo(profile[0])
+			if photo_id == '0':
+				bot.edit_message_text(chat_id = message.chat.id, message_id = last_mess_id, text = cap, reply_markup = keyboard, parse_mode = 'Markdown')
+			else: 
+				bot.edit_message_caption(chat_id = message.chat.id, message_id = last_mess_id, caption = cap, reply_markup=keyboard, parse_mode = 'Markdown')
+			change_st = 0
+
 
 @bot.message_handler(content_types = ['photo'])
 def upload_photo(message):
@@ -455,17 +659,43 @@ def upload_photo(message):
 		bot.send_message(message.chat.id, 'Ваша квартира добавлена!')
 		offerer_st = False
 		mode = 0
-	elif seeker_st == True and mode == 14:
+	elif seeker_st == True and mode == 16:
 		seeker.photo_id.append(photos.document_handler(message, bot))
 		db.seeker_insert(seeker)
-		bot.send_message(message.chat.id, '*Мы подбираем для вас квартиры с идеальными соседями...*', parse_mode = "Markdown")
+		bot.send_message(message.chat.id, 'Ваша анкета сформирована!')
 		bot.send_chat_action(message.chat.id, 'typing')
-		time.sleep(3)
+		time.sleep(2)
+		profile = db.get_profile(message.chat.id)
+		if profile[2] > 1000:
+			age = str(int(profile[2]/100)) + '-' + str(profile[2]%100)
+		else:
+			age = profile[2]
+		if profile[5] == 'student':
+			work = 'студент'
+		else:
+			work = 'работник'
+		cap = '*Имя:* '+ profile[1] + '\n' + '*Возраст:* ' + str(age) + '\n' + \
+		 '*Откуда родом:* '+ profile[3] + '\n' + '*Пол:* ' + profile[4] + '\n' + \
+		 '*Работник или студент:* ' + work + '\n' + '*Место:* ' + profile[6] + \
+		 '\n' + '*Режим сна:* '+ profile[7] + '\n' + '*Языки:* ' + profile[8] + '\n' + '*О себе:* ' + profile[13]
+		photo_id = db.get_profile_photo(profile[0])
+		if photo_id == '0':
+			bot.send_message(message.chat.id, cap, parse_mode = 'Markdown')
+		else: 
+			photo = photos.download_photo(photo_id)
+			bot.send_photo(message.chat.id, photo, caption = cap, parse_mode = 'Markdown')
+		bot.send_chat_action(message.chat.id, 'typing')
+		time.sleep(2)
+		bot.send_message(message.chat.id, 'Если Вы желаете изменить анкету, Вы можете сделать это в разделе \'Мои объявления\' в главном меню /menu')
+		time.sleep(2)
+		bot.send_message(message.chat.id, '*Мы подбираем для Вас квартиры с идеальными соседями...*', parse_mode = "Markdown")
+		bot.send_chat_action(message.chat.id, 'typing')
+		time.sleep(5)
 		seeker_st = False
 		flat_matches = db.get_matches(seeker)
 		keyboard = types.InlineKeyboardMarkup();
-		button = types.InlineKeyboardButton('Показать квартиры', callback_data = 'matches_out')
+		button = types.InlineKeyboardButton('Показать', callback_data = 'matches_out')
 		keyboard.add(button)
-		bot.send_message(message.chat.id, 'Квартиры найдены', reply_markup = keyboard)
+		bot.send_message(message.chat.id, 'Квартиры найдены!', reply_markup = keyboard)
 
 bot.polling(none_stop = True)

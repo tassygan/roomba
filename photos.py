@@ -6,6 +6,7 @@ from apiclient import discovery
 from httplib2 import Http  
 from oauth2client import file, client, tools 
 from oauth2client.file import Storage 
+from googleapiclient.discovery import build
 
 import config
 import telebot
@@ -26,6 +27,15 @@ if not creds or creds.invalid:
     creds = tools.run_flow(flow, store)  
 drive_service = discovery.build('drive', 'v3', http=creds.authorize(Http()),cache_discovery=False) 
 
+def download_photo(file_id):
+    request = drive_service.files().get_media(fileId=file_id)
+    fh = io.BytesIO()
+    downloader = MediaIoBaseDownload(fh, request)
+    done = False
+    while done is False:
+        status, done = downloader.next_chunk()
+        print ("Download %d%%." % int(status.progress() * 100))
+    return fh.getvalue()
 def get_flat_photo(message, flat_id, bot):
     photo_id = db.get_flat_photo_file_id(flat_id)
     # lista = []
