@@ -62,7 +62,6 @@ class SQL:
 				photo_id TEXT[] DEFAULT ARRAY[0]
 			);''')
 		self.con.commit()
-
 	def drop_tables(self):
 		self.cur.execute('''
 			DROP TABLE searchers;
@@ -78,14 +77,12 @@ class SQL:
 				seeker.study_or_work_place, seeker.sleeping_mode, seeker.langs, seeker.distr, seeker.near_what, seeker.price, \
 				seeker.seeking_for, seeker.interest, seeker.chat_id, seeker.photo_id, seeker.bad_habits))
 		self.con.commit()
-
 	def seeker_check_chat_id(self, chat_id):
 		self.cur.execute('SELECT * FROM seeker WHERE chat_id = %s', (chat_id,))
 		if self.cur.rowcount > 0:
 			return True
 		else:
 			return False
-
 	def seeker_delete(self, chat_id):
 		self.cur.execute('DELETE FROM seeker WHERE chat_id = %s', (chat_id,))
 		self.con.commit()
@@ -138,19 +135,20 @@ class SQL:
 		flat_profiles = self.cur.fetchone()
 		return flat_profiles[0]
 
-
 	def get_profile(self, chat_id):
 		self.cur.execute('SELECT * FROM seeker WHERE chat_id = %s', (str(chat_id), ))
 		return self.cur.fetchone()
-
 	def get_profile_by_id(self, prof_id):
 		self.cur.execute('SELECT * FROM seeker WHERE id = %s', (str(prof_id), ))
+		return self.cur.fetchone()
+	def get_flat(self, chat_id):
+		self.cur.execute('SELECT * FROM offerer WHERE chat_id = %s', (str(chat_id), ))
 		return self.cur.fetchone()
 
 	def get_flat_photo_file_id(self, flat_id):
 	    self.cur.execute('SELECT photo_id FROM offerer WHERE id = %s', (str(flat_id), ))
 	    photo_id = self.cur.fetchall()
-	    return photo_id[0]
+	    return photo_id[0][0][0]
 
 	def get_profile_photo(self, prof_id):
 		self.cur.execute('SELECT photo_id FROM seeker WHERE id = %s', (str(prof_id), ))
@@ -181,12 +179,3 @@ class SQL:
 	def change_desc(self, chat_id, desc):
 		self.cur.execute('UPDATE seeker SET interest = %s WHERE chat_id = %s', (desc, str(chat_id)))
 		self.con.commit()
-'''
-print("Database opened successfully")
-cur = con.cursor()
-cur.execute()
-
-print("Table created successfully")
-con.commit()  
-con.close()
-'''
