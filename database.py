@@ -1,6 +1,7 @@
 import psycopg2
 import telebot
 import os
+from users import Seeker, Offerer
 
 token = "1012837410:AAFY0lxwBFgWPIbRO-lO_MumXnlYJl-1ReQ"
 bot = telebot.TeleBot(token)
@@ -84,9 +85,20 @@ class SQL:
 		else:
 			return False
 	def seeker_delete(self, chat_id):
+		self.cur.execute('SELECT book_flat FROM seeker WHERE chat_id = %s', (chat_id,))
+		book_flat = self.cur.fetchone()[0]
+		self.cur.execute('SELECT id FROM seeker WHERE chat_id = %s', (chat_id,))
+		seeker_id = self.cur.fetchone()[0]
+		for flat_id in book_flat:
+			if flat_id == 0:
+				continue
+			self.cur.execute('SELECT book_seekers FROM offerer WHERE id = %s', (str(flat_id),))
+			flat = self.cur.fetchone()
+			self.cur.execute('UPDATE offerer SET book_num = book_num - 1 WHERE id = %s', (str(flat_id), ))
+			flat[0].remove(seeker_id)
+			self.cur.execute('UPDATE offerer SET book_seekers = %s WHERE id = %s', (flat[0], str(flat_id), ))
 		self.cur.execute('DELETE FROM seeker WHERE chat_id = %s', (chat_id,))
 		self.con.commit()
-
 	def offerer_insert(self, offerer):
 		price_per_sleep_place = int(offerer.price/offerer.sleep_places)
 		self.cur.execute('''
@@ -94,6 +106,18 @@ class SQL:
 			VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 			''', (offerer.distr, offerer.address, offerer.price, offerer.room_num, \
 				offerer.sleep_places, offerer.description, offerer.phone_num, offerer.chat_id, price_per_sleep_place, offerer.photo_id))
+		self.con.commit()
+	def offerer_delete(self, flat_id):
+		self.cur.execute('SELECT book_seekers FROM offerer WHERE id = %s', (str(flat_id),))
+		book_seekers = self.cur.fetchone()[0]
+		for prof_id in book_seekers:
+			if prof_id == 0:
+				continue
+			self.cur.execute('SELECT book_flat FROM seeker WHERE id = %s', (str(profile),))
+			profile = self.cur.fetchone()
+			profile[0].remove(flat_id)
+			self.cur.execute('UPDATE seeker SET book_flat = %s WHERE id = %s', (profile[0], str(prof_id),))
+		self.cur.execute('DELETE FROM offerer WHERE id = %s', (str(flat_id), ))
 		self.con.commit()
 	def get_matches(self, seeker):
 		if seeker.price == 'до 20.000 тенге':
@@ -108,6 +132,13 @@ class SQL:
 			self.cur.execute('SELECT * FROM offerer WHERE price_per_sleep_place >= 50000 AND %s = distr', (str(seeker.distr), ))
 		
 		return self.cur.fetchall() 
+	def get_rematches(self, chat_id):
+		self.cur.execute('SELECT price, distr FROM seeker WHERE chat_id = %s', (str(chat_id), ))
+		profile = self.cur.fetchone()
+		seeker = Seeker()
+		seeker.price = profile[0]
+		seeker.distr = profile[1]
+		return seeker
 
 	def book_flat(self, chat_id, flat_id):
 		self.cur.execute('UPDATE offerer SET book_num = book_num + 1 WHERE id = %s', (str(flat_id), ))
@@ -143,6 +174,9 @@ class SQL:
 		return self.cur.fetchone()
 	def get_flat(self, chat_id):
 		self.cur.execute('SELECT * FROM offerer WHERE chat_id = %s', (str(chat_id), ))
+		return self.cur.fetchall()
+	def get_flat_by_id(self, flat_id):
+		self.cur.execute('SELECT * FROM offerer WHERE id = %s', (str(flat_id), ))
 		return self.cur.fetchone()
 
 	def get_flat_photo_file_id(self, flat_id):
