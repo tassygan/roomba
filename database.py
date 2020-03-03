@@ -65,8 +65,8 @@ class SQL:
 		self.con.commit()
 	def drop_tables(self):
 		self.cur.execute('''
-			DROP TABLE searchers;
-			DROP TABLE tenants;
+			DROP TABLE seeker;
+			DROP TABLE offerer;
 			''')
 	
 	def seeker_insert(self, seeker):
