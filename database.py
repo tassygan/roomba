@@ -139,6 +139,45 @@ class SQL:
 		seeker.price = profile[0]
 		seeker.distr = profile[1]
 		return seeker
+	def get_profiles_by_filters(self, distr, price):
+		self.cur.execute('SELECT * FROM seeker')
+		n = self.cur.rowcount
+		profiles = self.cur.fetchall()
+		# profiles[x][9] - distr
+		# profiles[x][11] - price
+		# sort by distr, price
+		for i in range(n):
+			for j in range(0, n-i-1):
+				num1 = 0
+				num2 = 0
+				if distr is not None:
+					if profiles[j][9] == distr:
+						num1 += 1
+					if profiles[j+1][9] == distr:
+						num2 += 1
+				if price is not None:
+					if profiles[j][11] == price:
+						num1 += 1
+					if profiles[j+1][11] == price:
+						num2 += 1
+				if num2 > num1:
+					profiles[j], profiles[j+1] = profiles[j+1], profiles[j]
+		return profiles
+	def get_flats_by_filters(self, distr, price):
+		self.cur.execute('SELECT * FROM offerer')
+		n = self.cur.rowcount
+		flats = self.cur.fetchall()
+		# profiles[x][1] - distr
+		# profiles[x][3] - price
+		# sort by distr, price
+		for i in range(n):
+			for j in range(0, n-i-1):
+				if distr is not None:
+					if flats[j+1][1] == distr and flats[j][1] != distr:
+						flats[j+1], flats[j] = flats[j], flats[j+1]
+					elif price is not None and abs(flats[j+1][3] - price) < abs(flats[j][3] - price):
+						flats[j+1], flats[j] = flats[j], flats[j+1]
+		return flats
 
 	def book_flat(self, chat_id, flat_id):
 		self.cur.execute('UPDATE offerer SET book_num = book_num + 1 WHERE id = %s', (str(flat_id), ))
@@ -152,8 +191,19 @@ class SQL:
 		seeker = self.cur.fetchone()
 		seeker[0].insert(0, flat_id)
 		self.cur.execute('UPDATE seeker SET book_flat = %s WHERE id = %s', (seeker[0], str(seeker_id[0]), ))
-		self.con.commit()
+		self.cur.execute('SELECT book_num, sleep_places FROM offerer WHERE id = %s', (str(flat_id), ))
+		# num = self.cur.fetchone()
+		# if num[0] == num[1]:
+		# 	self.cur.execute('SELECT book_seekers FROM offerer WHERE id = %s', (str(flat_id), ))
+		# 	book_seekers = self.cur.fetchone()
+		# 	print(book_seekers)
+		# 	for seeker in book_seekers[0]:
+		# 		self.cur.execute('SELECT chat_id FROM seeker WHERE id = %s', (str(seeker), ))
+		# 		chat_id = self.cur.fetchone()
+		# 		bot.send_message(chat_id[0], 'Ваша квартира готова!')
 
+
+		self.con.commit()
 	def check_book(self, chat_id, flat_id):
 		self.cur.execute('SELECT book_flat FROM seeker WHERE chat_id = %s', (str(chat_id), ))
 		book_flats = self.cur.fetchall()
@@ -165,7 +215,6 @@ class SQL:
 		self.cur.execute('SELECT book_seekers FROM offerer WHERE id = %s', (str(flat_id), ))
 		flat_profiles = self.cur.fetchone()
 		return flat_profiles[0]
-
 	def get_profile(self, chat_id):
 		self.cur.execute('SELECT * FROM seeker WHERE chat_id = %s', (str(chat_id), ))
 		return self.cur.fetchone()
@@ -178,29 +227,23 @@ class SQL:
 	def get_flat_by_id(self, flat_id):
 		self.cur.execute('SELECT * FROM offerer WHERE id = %s', (str(flat_id), ))
 		return self.cur.fetchone()
-
 	def get_flat_photo_file_id(self, flat_id):
 	    self.cur.execute('SELECT photo_id FROM offerer WHERE id = %s', (str(flat_id), ))
 	    photo_id = self.cur.fetchall()
 	    return photo_id[0][0][0]
-
 	def get_profile_photo(self, prof_id):
 		self.cur.execute('SELECT photo_id FROM seeker WHERE id = %s', (str(prof_id), ))
 		photo_id = self.cur.fetchall()
 		print(photo_id)
 		return photo_id[0][0][0]
-
 	def close(self):
 		self.con.close()
-	
 	def flat_out(self, idf):
 		self.cur.execute('SELECT * FROM offerer WHERE id = %s', str(idf))
 		return self.cur.fetchone()
-	
 	def flat_num(self):
 		self.cur.execute('SELECT * FROM offerer')
 		return self.cur.rowcount
-
 	def change_name(self, chat_id, name):
 		self.cur.execute('UPDATE seeker SET name = %s WHERE chat_id = %s', (str(name), str(chat_id)))
 		self.con.commit()
