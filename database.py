@@ -9,18 +9,18 @@ bot = telebot.TeleBot(token)
 class SQL:
 	def __init__(self):
 		#local host------------------
-		# self.con = psycopg2.connect(
-		#   database = "roomba",
-		#   user ="postgres", 
-		#   password="sbazgugu", 
-		#   host="localhost", 
-		#   port="5432"
-		# )
+		self.con = psycopg2.connect(
+		  database = "roomba",
+		  user ="postgres", 
+		  password="sbazgugu", 
+		  host="localhost", 
+		  port="5432"
+		)
 		#----------------------------
 
 		#heroku----------------------
-		DATABASE_URL = os.environ['DATABASE_URL']
-		self.con = psycopg2.connect(DATABASE_URL, sslmode='require')
+		#DATABASE_URL = os.environ['DATABASE_URL']
+		#self.con = psycopg2.connect(DATABASE_URL, sslmode='require')
 		#----------------------------
 
 		self.cur = self.con.cursor()
@@ -113,10 +113,11 @@ class SQL:
 		for prof_id in book_seekers:
 			if prof_id == 0:
 				continue
-			self.cur.execute('SELECT book_flat FROM seeker WHERE id = %s', (str(profile),))
+			self.cur.execute('SELECT book_flat FROM seeker WHERE id = %s', (str(prof_id),))
 			profile = self.cur.fetchone()
-			profile[0].remove(flat_id)
-			self.cur.execute('UPDATE seeker SET book_flat = %s WHERE id = %s', (profile[0], str(prof_id),))
+			tmp = profile[0]
+			tmp.remove(flat_id)
+			self.cur.execute('UPDATE seeker SET book_flat = %s WHERE id = %s', (tmp, str(prof_id),))
 		self.cur.execute('DELETE FROM offerer WHERE id = %s', (str(flat_id), ))
 		self.con.commit()
 	def get_matches(self, seeker):
