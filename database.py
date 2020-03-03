@@ -116,7 +116,7 @@ class SQL:
 			self.cur.execute('SELECT book_flat FROM seeker WHERE id = %s', (str(prof_id),))
 			profile = self.cur.fetchone()
 			tmp = profile[0]
-			tmp.remove(flat_id)
+			tmp.remove(int(flat_id))
 			self.cur.execute('UPDATE seeker SET book_flat = %s WHERE id = %s', (tmp, str(prof_id),))
 		self.cur.execute('DELETE FROM offerer WHERE id = %s', (str(flat_id), ))
 		self.con.commit()
