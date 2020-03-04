@@ -9,18 +9,18 @@ bot = telebot.TeleBot(token)
 class SQL:
 	def __init__(self):
 		#local host------------------
-		# self.con = psycopg2.connect(
-		#   database = "roomba",
-		#   user ="postgres", 
-		#   password="sbazgugu", 
-		#   host="localhost", 
-		#   port="5432"
-		# )
+		self.con = psycopg2.connect(
+		  database = "roomba",
+		  user ="postgres", 
+		  password="sbazgugu", 
+		  host="localhost", 
+		  port="5432"
+		)
 		#----------------------------
 
 		#heroku----------------------
-		DATABASE_URL = os.environ['DATABASE_URL']
-		self.con = psycopg2.connect(DATABASE_URL, sslmode='require')
+		#DATABASE_URL = os.environ['DATABASE_URL']
+		#self.con = psycopg2.connect(DATABASE_URL, sslmode='require')
 		#----------------------------
 
 		self.cur = self.con.cursor()
@@ -45,7 +45,8 @@ class SQL:
 				book_flat INT[] DEFAULT ARRAY[0],
 				chat_id TEXT,
 				photo_id TEXT[] DEFAULT ARRAY[0],
-				bad_habits TEXT
+				bad_habits TEXT,
+				telegram_username TEXT
 			);
 			CREATE TABLE offerer(
 				id SERIAL PRIMARY KEY,
@@ -60,7 +61,8 @@ class SQL:
 				book_num INT DEFAULT 0,
 				book_seekers INT[] DEFAULT ARRAY[0],
 				chat_id TEXT,
-				photo_id TEXT[] DEFAULT ARRAY[0]
+				photo_id TEXT[] DEFAULT ARRAY[0],
+				telegram_username TEXT
 			);''')
 		self.con.commit()
 	def drop_tables(self):
@@ -72,11 +74,11 @@ class SQL:
 	def seeker_insert(self, seeker):
 		self.cur.execute('''
 			INSERT INTO seeker(name, age, homeland, phone_num, gender, worker_or_student, study_or_work_place, sleeping_mode, langs, 
-			distr, near_what, price, seeking_for, interest, chat_id, photo_id, bad_habits) 
-			VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+			distr, near_what, price, seeking_for, interest, chat_id, photo_id, bad_habits, telegram_username) 
+			VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 			''', (seeker.name, seeker.age, seeker.homeland, seeker.phone_num, seeker.gender, seeker.worker_or_student, \
 				seeker.study_or_work_place, seeker.sleeping_mode, seeker.langs, seeker.distr, seeker.near_what, seeker.price, \
-				seeker.seeking_for, seeker.interest, seeker.chat_id, seeker.photo_id, seeker.bad_habits))
+				seeker.seeking_for, seeker.interest, seeker.chat_id, seeker.photo_id, seeker.bad_habits, seeker.telegram_username))
 		self.con.commit()
 	def seeker_check_chat_id(self, chat_id):
 		self.cur.execute('SELECT * FROM seeker WHERE chat_id = %s', (chat_id,))
@@ -102,10 +104,12 @@ class SQL:
 	def offerer_insert(self, offerer):
 		price_per_sleep_place = int(offerer.price/offerer.sleep_places)
 		self.cur.execute('''
-		INSERT INTO offerer(distr,address, price, room_num, sleep_places, description, phone_num, chat_id, price_per_sleep_place, photo_id) 
-			VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+		INSERT INTO offerer(distr,address, price, room_num, sleep_places, description, phone_num, chat_id, \
+		price_per_sleep_place, photo_id, telegram_username) 
+			VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 			''', (offerer.distr, offerer.address, offerer.price, offerer.room_num, \
-				offerer.sleep_places, offerer.description, offerer.phone_num, offerer.chat_id, price_per_sleep_place, offerer.photo_id))
+				offerer.sleep_places, offerer.description, offerer.phone_num, offerer.chat_id,\
+				price_per_sleep_place, offerer.photo_id, offerer.telegram_username))
 		self.con.commit()
 	def offerer_delete(self, flat_id):
 		self.cur.execute('SELECT book_seekers FROM offerer WHERE id = %s', (str(flat_id),))

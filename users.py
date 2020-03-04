@@ -17,6 +17,7 @@ class Seeker:
 		self.chat_id = ""
 		self.photo_id = []
 		self.bad_habits = ""
+		self.telegram_username = ""
 class Offerer:
 	def __init__(self):
 		self.distr = ""
@@ -30,3 +31,4 @@ class Offerer:
 		self.book_num = 0
 		self.chat_id = ""
 		self.photo_id = []	
+		self.telegram_username = ""
