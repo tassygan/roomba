@@ -9,8 +9,8 @@ import photos
 token = "1012837410:AAFY0lxwBFgWPIbRO-lO_MumXnlYJl-1ReQ"
 bot = telebot.TeleBot(token)
 db = SQL()
+allvars = []
 mode = 0
-flat_id = 1
 cur_flat = 0
 cur_profile = 0
 change_st = 0
@@ -30,11 +30,39 @@ search_profile = False
 search_flat = False
 feedback_st = False
 
+def init_vars(chat_id):
+	global mode, cur_flat, feedback_st, cur_profile, change_st, last_mess_id, seeker, offerer, flat_matches, flat_profiles,\
+	flats, profiles, flat_profile_st, seeker_st, offerer_st, search_profile, search_flat, seeker_search_st
+	for a in allvars:
+		if a['chat_id'] == chat_id:
+			mode = a['mode']
+			cur_flat = a['cur_flat']
+			cur_profile = a['cur_profile']
+			change_st = a['change_st']
+			last_mess_id = a['last_mess_id']
+			seeker = a['seeker']
+			offerer = a['offerer']
+			flat_matches = a['flat_matches']
+			flat_profiles = a['flat_profiles']
+			flats = a['flats']
+			profiles = a['profiles']
+
+			flat_profile_st = a['flat_profile_st']
+			seeker_st = a['seeker_st']
+			seeker_search_st = a['seeker_search_st']
+			offerer_st = a['offerer_st']
+			search_profile = a['search_profile']
+			search_flat = a['search_flat']
+			feedback_st = a['feedback_st']
+			return
+	globalvars = {'chat_id'}
+
+
+
 def default_vars():
-	global mode, flat_id, cur_flat, feedback_st, cur_profile, change_st, last_mess_id, seeker, offerer, flat_matches, flat_profiles,\
+	global mode, cur_flat, feedback_st, cur_profile, change_st, last_mess_id, seeker, offerer, flat_matches, flat_profiles,\
 	flats, profiles, flat_profile_st, seeker_st, offerer_st, search_profile, search_flat, seeker_search_st
 	mode = 0
-	flat_id = 1
 	cur_flat = 0
 	cur_profile = 0
 	change_st = 0
