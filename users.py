@@ -18,17 +18,4 @@ class Seeker:
 		self.photo_id = []
 		self.bad_habits = ""
 		self.telegram_username = ""
-class Offerer:
-	def __init__(self):
-		self.distr = ""
-		self.address = ""
-		self.price = 0
-		self.room_num = 0
-		self.sleep_places = 0
-		self.price_per_sleep_place = 0
-		self.description = ""
-		self.phone_num = ""
-		self.book_num = 0
-		self.chat_id = ""
-		self.photo_id = []	
-		self.telegram_username = ""
+		self.hata = False

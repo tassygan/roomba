@@ -13,7 +13,7 @@ import telebot
 from telebot.types import InputMediaPhoto, InputMediaVideo
 from telebot import types
 from database import SQL
-from users import Seeker, Offerer
+from users import Seeker
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',level=logging.INFO)  
 logger = logging.getLogger(__name__)  

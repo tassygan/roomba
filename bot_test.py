@@ -1,7 +1,4 @@
-from users import Seeker
+settings = {}
 
-globalvars = {'chat_id':None, 'mode':None}
-seeker = Seeker()
-seeker.name = 'Aidar'
-globalvars['chat_id'] = seeker
-print(globalvars)
+
+print(x in settings.keys())
