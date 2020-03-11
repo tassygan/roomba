@@ -6,8 +6,8 @@ from database import SQL
 from users import Seeker
 import photos
 
-#token = "1149025408:AAHPU-RBBk_DPdIxl5dmC53U3EjJeu708To" #mainbot
-token = "1012837410:AAFY0lxwBFgWPIbRO-lO_MumXnlYJl-1ReQ" #testbot
+token = "1149025408:AAHPU-RBBk_DPdIxl5dmC53U3EjJeu708To" #mainbot
+#token = "1012837410:AAFY0lxwBFgWPIbRO-lO_MumXnlYJl-1ReQ" #testbot
 bot = telebot.TeleBot(token)
 db = SQL()
 allvars = {}
@@ -70,19 +70,27 @@ def profile_info(profile):
 		age = str(profile[2])
 	age += ' лет'
 	if profile[5] == 'student':
-		work = '*Студент.* Учится в '
+		work = '*Студент.* Учусь в '
 	else:
-		work = 'Работник. Работает в сфере'
+		work = 'Работаю в сфере'
 	place = ""
 	if profile[8] == 'Казахский':
-		place = 'Говорит на казахском'
+		place = 'Говорю на казахском'
 	elif profile[8] == 'Русский':
-		place = 'Говорит на русском'
+		place = 'Говорю на русском'
 	else:
-		place = 'Говорит и на казахском, и на русском'
+		place = 'Говорю и на казахском, и на русском'
+	food = ''
+
+	if len(profile) > 20 and profile[21] is not None:
+		if profile[21] is True:
+			food = '*Умеею готовить: *' + 'Да\n'
+		else:
+			food = '*Умеею готовить: *' + 'Нет\n'
+
 	text += '*Имя:* '+ profile[1] + '\n' + '*Возраст:* ' + str(age) + '\n' + \
 			'*Родом с* '+ profile[3] + '\n' + '*Пол:* ' + profile[4] + '\n' + work + \
-			profile[6] + '\n' + '*Режим сна:* '+ profile[7] + '\n' + place + '\n' + \
+			profile[6] + '\n' + '*Режим сна:* '+ profile[7] + '\n' + place + '\n' + food + \
 			'*Вредные привычки: *' + profile[18] + '\n' + '*О себе:* ' + profile[13]
 	if profile[19] is not None:
 		text += '\n@'+profile[19]
@@ -374,8 +382,21 @@ def name_insert_data(message):
 			keyboard = types.ReplyKeyboardMarkup(True, True)
 			keyboard.row('Да', 'Нет')
 			keyboard.row('🔙Назад в меню')
-			bot.send_message(message.chat.id, 'Вы ищете людей на подселение в свою квартиру?', reply_markup=keyboard)
+			bot.send_message(message.chat.id, 'Умеете ли Вы готовить?', reply_markup=keyboard)
 		elif u.mode == 10:
+			if message.text == 'Да':
+				u.seeker.food = True
+			elif message.text == 'Нет':
+				u.seeker.food = False
+			else:
+				bot.send_message(message.chat.id, 'Неправильный ввод!\n(Да/Нет)')
+				return
+			mode += 1
+			keyboard = types.ReplyKeyboardMarkup(True, True)
+			keyboard.row('Да', 'Нет')
+			keyboard.row('🔙Назад в меню')
+			bot.send_message(message.chat.id, 'Вы ищете людей на подселение в свою квартиру?', reply_markup=keyboard)
+		elif u.mode == 11:
 			if message.text == 'Да':
 				u.seeker.hata = True
 				keyboard = types.ReplyKeyboardMarkup(True, True)
@@ -394,7 +415,7 @@ def name_insert_data(message):
 				bot.send_message(message.chat.id, 'Неправильный ввод.\n(Да/Нет)')
 				return
 			u.mode += 1
-		elif u.mode == 11:
+		elif u.mode == 12:
 			distr = message.text
 			if distr == 'Алматинский' or distr == 'Байконурский' or distr == 'Есильский' or distr == 'Сарыаркинский':
 				u.seeker.distr = message.text
@@ -411,7 +432,7 @@ def name_insert_data(message):
 					микрорайона, магазин, бизнес-центр, пересечение улиц, достопримечательность)')
 			else:
 				bot.send_message(message.chat.id, 'Неправильный ввод!')
-		elif u.mode == 12:
+		elif u.mode == 13:
 			u.seeker.near_what = message.text
 			u.mode += 1
 			keyboard = types.ReplyKeyboardMarkup(True, True)
@@ -419,7 +440,7 @@ def name_insert_data(message):
 			keyboard.row('от 30.000 до 40.000 тенге', 'от 40.000 до 50.000 тенге')
 			keyboard.row('выше 50.000 тенге', '🔙Назад в меню')
 			bot.send_message(message.chat.id, 'Желательная цена', reply_markup=keyboard)
-		elif u.mode == 13:
+		elif u.mode == 14:
 			u.seeker.price = message.text
 			keyboard = types.ReplyKeyboardMarkup(True, True)
 			keyboard.row('Отдельную комнату', 'Можно с кем-нибудь в комнате')
@@ -427,7 +448,7 @@ def name_insert_data(message):
 			keyboard.row('🔙Назад в меню')
 			bot.send_message(message.chat.id, 'Я ищу...', reply_markup=keyboard)
 			u.mode += 1
-		elif u.mode == 14:
+		elif u.mode == 15:
 			if u.seeker.hata == True:
 				u.seeker.price = message.text
 			else:
@@ -436,13 +457,13 @@ def name_insert_data(message):
 			keyboard = types.ReplyKeyboardMarkup(True, True)
 			keyboard.row('🔙Назад в меню')
 			bot.send_message(message.chat.id, 'Расскажите о себе (интересы, хобби, путешествия, книги, фильмы)',reply_markup=keyboard)
-		elif u.mode == 15:
+		elif u.mode == 16:
 			u.seeker.interest = message.text
 			u.mode += 1
 			keyboard = types.ReplyKeyboardMarkup(True, True)
 			keyboard.row('🔙Назад в меню')
 			bot.send_message(message.chat.id, 'Введите ваш номер телефона\n(пример: 8-ххх-ххх-хх-хх)', reply_markup=keyboard)
-		elif u.mode == 16:
+		elif u.mode == 17:
 			num = message.text
 			digits = 0
 			correct = True
@@ -461,7 +482,7 @@ def name_insert_data(message):
 			keyboard.row('🔙Назад в меню')
 			bot.send_message(message.chat.id, 'Отправьте своё селфи', reply_markup=keyboard)
 			u.mode += 1
-		elif u.mode == 17:
+		elif u.mode == 18:
 			bot.send_message(message.chat.id, 'Загрузите фотографию')
 	elif u.search_profile == True:
 		if u.mode == 1:
@@ -589,13 +610,12 @@ def name_insert_data(message):
 			change_st = 0
 	else:
 		bot.send_message(message.chat.id, 'Чтобы выйти в главное меню выполните команду /menu')
-
 @bot.message_handler(content_types = ['photo'])
 def upload_photo(message):
 	global allvars
 	add_new_user(message.chat.id)
 	u = allvars[message.chat.id]
-	if (u.seeker_st == True or u.seeker_search_st == True) and u.mode == 17:
+	if (u.seeker_st == True or u.seeker_search_st == True) and u.mode == 18:
 		u.seeker.photo_id.append(photos.document_handler(message, bot))
 		if message.from_user.username is not None:
 			u.seeker.telegram_username = message.from_user.username
