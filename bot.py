@@ -60,6 +60,10 @@ def main_menu(message):
 	bot.send_message(message.chat.id, 'Главное меню', reply_markup=keyboard)
 
 def profile_info(profile):
+	if profile[20] == True:
+		text = '*Ищет людей для подселения в свою квартиру*\n*Расположение квартиры:* ' + profile[9] + ' район\n\n'
+	else:
+		text = ''
 	if profile[2] > 1000:
 		age = str(int(profile[2]/100)) + '-' + str(profile[2]%100)
 	else:
@@ -76,7 +80,7 @@ def profile_info(profile):
 		place = 'Говорит на русском'
 	else:
 		place = 'Говорит и на казахском, и на русском'
-	text = '*Имя:* '+ profile[1] + '\n' + '*Возраст:* ' + str(age) + '\n' + \
+	text += '*Имя:* '+ profile[1] + '\n' + '*Возраст:* ' + str(age) + '\n' + \
 			'*Родом с* '+ profile[3] + '\n' + '*Пол:* ' + profile[4] + '\n' + work + \
 			profile[6] + '\n' + '*Режим сна:* '+ profile[7] + '\n' + place + '\n' + \
 			'*Вредные привычки: *' + profile[18] + '\n' + '*О себе:* ' + profile[13]
@@ -133,7 +137,8 @@ def callback(call):
 			bot.delete_message(call.message.chat.id, call.message.message_id)
 			if call.data == 'rematch_profiles':
 				profile = db.get_profile(call.message.chat.id)
-				u.profiles = db.get_profiles_by_filters(call.message.chat.id, profile[9], profile[11])
+				seeker = Seeker(profile)
+				u.profiles = db.get_profiles_by_filters(seeker)
 			if call.data == 'profile_prev':
 				u.cur_profile -= 2
 			if u.profiles is None or u.cur_profile >= len(u.profiles) or u.cur_profile < 0:
@@ -374,9 +379,10 @@ def name_insert_data(message):
 			if message.text == 'Да':
 				u.seeker.hata = True
 				keyboard = types.ReplyKeyboardMarkup(True, True)
+				keyboard.row('Алматинский', 'Байконурский')
+				keyboard.row('Есильский', 'Сарыаркинский')
 				keyboard.row('🔙Назад в меню')
-				bot.send_message(message.chat.id, 'Расскажите о себе (интересы, хобби, путешествия, книги, фильмы)',reply_markup=keyboard)
-				mode += 4
+				bot.send_message(message.chat.id, 'В каком районе находится ваша квартира?', reply_markup = keyboard)
 			elif message.text == 'Нет':
 				u.seeker.hata = False
 				keyboard = types.ReplyKeyboardMarkup(True, True)
@@ -393,8 +399,16 @@ def name_insert_data(message):
 			if distr == 'Алматинский' or distr == 'Байконурский' or distr == 'Есильский' or distr == 'Сарыаркинский':
 				u.seeker.distr = message.text
 				u.mode += 1
-				bot.send_message(message.chat.id, 'Уточните возле чего вам удобно жить(название \
-				микрорайона, магазин, бизнес-центр, пересечение улиц, достопримечательность)')
+				if u.seeker.hata == True:
+					u.mode += 2
+					keyboard = types.ReplyKeyboardMarkup(True, True)
+					keyboard.row('до 20.000 тенге', 'от 20.000 до 30.000 тенге')
+					keyboard.row('от 30.000 до 40.000 тенге', 'от 40.000 до 50.000 тенге')
+					keyboard.row('выше 50.000 тенге', '🔙Назад в меню')
+					bot.send_message(message.chat.id, 'Стоимость аренды квартиры с одного человека', reply_markup=keyboard)
+				else:	
+					bot.send_message(message.chat.id, 'Уточните возле чего вам удобно жить(название \
+					микрорайона, магазин, бизнес-центр, пересечение улиц, достопримечательность)')
 			else:
 				bot.send_message(message.chat.id, 'Неправильный ввод!')
 		elif u.mode == 12:
@@ -414,7 +428,10 @@ def name_insert_data(message):
 			bot.send_message(message.chat.id, 'Я ищу...', reply_markup=keyboard)
 			u.mode += 1
 		elif u.mode == 14:
-			u.seeker.seeking_for = message.text
+			if u.seeker.hata == True:
+				u.seeker.price = message.text
+			else:
+				u.seeker.seeking_for = message.text
 			u.mode += 1
 			keyboard = types.ReplyKeyboardMarkup(True, True)
 			keyboard.row('🔙Назад в меню')
@@ -461,8 +478,9 @@ def name_insert_data(message):
 				bot.send_message(message.chat.id, 'Неправильный ввод!')
 		elif u.mode == 2:
 			u.seeker.price = message.text
-			u.profiles = db.get_profiles_by_filters(u.seeker.distr, u.seeker.price)
-			print(u.profiles)
+			u.seeker.chat_id = message.chat.id
+			u.seeker.hata = None
+			u.profiles = db.get_profiles_by_filters(u.seeker)
 			u.seeker = Seeker()
 			u.search_profile = False
 			u.mode = 0
@@ -609,7 +627,7 @@ def upload_photo(message):
 			keyboard.add(button)
 			bot.send_message(message.chat.id, 'Квартиры найдены!', reply_markup = keyboard)
 		elif u.seeker_search_st == True:
-			bot.send_message(message.chat.id, '*Мы подбираем для Вас идеальных людей для сожительства...*', parse_mode = 'Markdown')
+			bot.send_message(message.chat.id, '*Мы подбираем для Вас идеальных соседов по квартире...*', parse_mode = 'Markdown')
 			bot.send_chat_action(message.chat.id, 'typing')
 			time.sleep(5)
 			u.seeker_search_st = False

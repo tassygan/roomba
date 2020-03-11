@@ -110,26 +110,71 @@ class SQL:
 		seeker.distr = profile[1]
 		return seeker
 	def get_profiles_by_filters(self, seeker):
-		self.cur.execute('SELECT * FROM seeker WHERE chat_id != %s', (str(seeker.chat_id), ))
+		if seeker.hata is not None:	
+			self.cur.execute('SELECT * FROM seeker WHERE chat_id != %s AND hata != %s', (str(seeker.chat_id), seeker.hata))
+		else:
+			self.cur.execute('SELECT * FROM seeker WHERE chat_id != %s', (str(seeker.chat_id), ))
 		n = self.cur.rowcount
 		profiles = self.cur.fetchall()
+		# profiles[x][2] - age
+		# profiles[x][3] - homeland
+		# profiles[x][4] - gender
+		# profiles[x][5] - worker_or_student
+		# profiles[x][6] - study or work place
+		# profiles[x][7] - sleeping mode
+		# profiles[x][8] - langs
 		# profiles[x][9] - distr
 		# profiles[x][11] - price
-		# sort by distr, price
+		# sort by all this factors
 		for i in range(n):
 			for j in range(0, n-i-1):
 				num1 = 0
 				num2 = 0
-				if distr is not None:
+				if seeker.distr is not None:
 					if profiles[j][9] == seeker.distr:
-						num1 += 1
+						num1 += 10
 					if profiles[j+1][9] == seeker.distr:
-						num2 += 1
-				if price is not None:
-					if profiles[j][11] == price:
-						num1 += 1
-					if profiles[j+1][11] == price:
-						num2 += 1
+						num2 += 10
+				if seeker.price is not None:
+					if profiles[j][11] == seeker.price:
+						num1 += 10
+					if profiles[j+1][11] == seeker.price:
+						num2 += 10
+				if seeker.age is not None:
+					if profiles[j][2] == seeker.age:
+						num1 += 3
+					if profiles[j+1][2] == seeker.age:
+						num2 += 3
+				if seeker.homeland is not None:
+					if profiles[j][3] == seeker.homeland:
+						num1 += 2
+					if profiles[j+1][3] == seeker.homeland:
+						num2 += 2
+				if seeker.gender is not None:
+					if profiles[j][4] == seeker.gender:
+						num1 += 7
+					if profiles[j+1][4] == seeker.gender:
+						num2 += 7
+				if seeker.worker_or_student is not None:
+					if profiles[j][5] == seeker.worker_or_student:
+						num1 += 7
+					if profiles[j+1][5] == seeker.worker_or_student:
+						num2 += 7
+				if seeker.study_or_work_place is not None:
+					if profiles[j][6] == seeker.study_or_work_place:
+						num1 += 2
+					if profiles[j+1][6] == seeker.study_or_work_place:
+						num2 += 2
+				if seeker.sleeping_mode is not None:
+					if profiles[j][7] == seeker.sleeping_mode:
+						num1 += 5
+					if profiles[j+1][7] == seeker.sleeping_mode:
+						num2 += 5
+				if seeker.langs is not None:
+					if profiles[j][2] == seeker.langs:
+						num1 += 4
+					if profiles[j+1][2] == seeker.langs:
+						num2 += 4
 				if num2 > num1:
 					profiles[j], profiles[j+1] = profiles[j+1], profiles[j]
 		return profiles
