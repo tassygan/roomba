@@ -391,7 +391,7 @@ def name_insert_data(message):
 			else:
 				bot.send_message(message.chat.id, 'Неправильный ввод!\n(Да/Нет)')
 				return
-			mode += 1
+			u.mode += 1
 			keyboard = types.ReplyKeyboardMarkup(True, True)
 			keyboard.row('Да', 'Нет')
 			keyboard.row('🔙Назад в меню')
