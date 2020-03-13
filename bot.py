@@ -116,7 +116,7 @@ def profile_info(profile):
 	if profile[5] == 'student':
 		work = 'Студент. Учусь в '
 	else:
-		work = 'Работаю в сфере'
+		work = 'Работаю в сфере '
 	place = ""
 	if profile[8] == 'Казахский':
 		place = 'Говорю на казахском'
