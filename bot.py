@@ -2,12 +2,13 @@ import telebot
 import time
 import urllib
 from telebot import types
+from telebot.types import InputMediaPhoto
 from database import SQL
 from users import Seeker
 import photos
 
-token = "1149025408:AAHPU-RBBk_DPdIxl5dmC53U3EjJeu708To" #mainbot
-#token = "1012837410:AAFY0lxwBFgWPIbRO-lO_MumXnlYJl-1ReQ" #testbot
+#token = "1149025408:AAHPU-RBBk_DPdIxl5dmC53U3EjJeu708To" #mainbot
+token = "1012837410:AAFY0lxwBFgWPIbRO-lO_MumXnlYJl-1ReQ" #testbot
 bot = telebot.TeleBot(token)
 db = SQL()
 allvars = {}
@@ -59,17 +60,61 @@ def main_menu(message):
 	bot.send_message(message.chat.id, 'Главное меню', reply_markup=keyboard)
 
 def profile_info(profile):
+	# if profile[20] == True:
+	# 	text = '*Ищет людей для подселения в свою квартиру*\n*Расположение квартиры:* ' + profile[9] + ' район\n\n'
+	# else:
+	# 	text = ''
+	# if profile[2] > 1000:
+	# 	age = str(int(profile[2]/100)) + '-' + str(profile[2]%100)
+	# else:
+	# 	age = str(profile[2])
+	# age += ' лет'
+	# if profile[5] == 'student':
+	# 	work = '*Студент.* Учусь в '
+	# else:
+	# 	work = 'Работаю в сфере'
+	# place = ""
+	# if profile[8] == 'Казахский':
+	# 	place = 'Говорю на казахском'
+	# elif profile[8] == 'Русский':
+	# 	place = 'Говорю на русском'
+	# else:
+	# 	place = 'Говорю и на казахском, и на русском'
+	# food = ''
+
+	# if len(profile) > 20 and profile[21] is not None:
+	# 	if profile[21] is True:
+	# 		food = '*Умеею готовить: *' + 'Да\n'
+	# 	else:
+	# 		food = '*Умеею готовить: *' + 'Нет\n'
+
+	# text += '*Имя:* '+ profile[1] + '\n' + '*Возраст:* ' + str(age) + '\n' + \
+	# 		'*Родом с* '+ profile[3] + '\n' + '*Пол:* ' + profile[4] + '\n' + work + \
+	# 		profile[6] + '\n' + '*Режим сна:* '+ profile[7] + '\n' + place + '\n' + food + \
+	# 		'*Вредные привычки: *' + profile[18] + '\n' + '*О себе:* ' + profile[13]
+	# if profile[19] is not None:
+	# 	text += '\n@'+profile[19]
+	# return text
 	if profile[20] == True:
-		text = '*Ищет людей для подселения в свою квартиру*\n*Расположение квартиры:* ' + profile[9] + ' район\n\n'
+		text = 'Ищет людей для подселения в свою квартиру\nРасположение квартиры: ' + profile[9] + ' район\n\n'
 	else:
-		text = ''
+		text = 'Ищет квартиру в '
+		if profile[9] == 'Алматинский':
+			text += 'Алматинском районе\n\n'
+		elif profile[9] == 'Есильский':
+			text += 'Есильском районе\n\n'
+		elif profile[9] == 'Байконурский':
+			text += 'Байконурском районе\n\n'
+		elif profile[9] == 'Сарыаркинский':
+			text += 'Сарыаркинском районе\n\n'
+
 	if profile[2] > 1000:
 		age = str(int(profile[2]/100)) + '-' + str(profile[2]%100)
 	else:
 		age = str(profile[2])
 	age += ' лет'
 	if profile[5] == 'student':
-		work = '*Студент.* Учусь в '
+		work = 'Студент. Учусь в '
 	else:
 		work = 'Работаю в сфере'
 	place = ""
@@ -83,18 +128,17 @@ def profile_info(profile):
 
 	if len(profile) > 20 and profile[21] is not None:
 		if profile[21] is True:
-			food = '*Умеею готовить: *' + 'Да\n'
+			food = 'Умеею готовить: ' + 'Да\n'
 		else:
-			food = '*Умеею готовить: *' + 'Нет\n'
+			food = 'Умеею готовить: ' + 'Нет\n'
 
-	text += '*Имя:* '+ profile[1] + '\n' + '*Возраст:* ' + str(age) + '\n' + \
-			'*Родом с* '+ profile[3] + '\n' + '*Пол:* ' + profile[4] + '\n' + work + \
-			profile[6] + '\n' + '*Режим сна:* '+ profile[7] + '\n' + place + '\n' + food + \
-			'*Вредные привычки: *' + profile[18] + '\n' + '*О себе:* ' + profile[13]
+	text += 'Имя: '+ profile[1] + '\n' + 'Возраст: ' + str(age) + '\n' + \
+			'Родом с '+ profile[3] + '\n' + 'Пол: ' + profile[4] + '\n' + work + \
+			profile[6] + '\n' + 'Режим сна: '+ profile[7] + '\n' + place + '\n' + food + \
+			'Вредные привычки: ' + profile[18] + '\n' + 'О себе: ' + profile[13]
 	if profile[19] is not None:
 		text += '\n@'+profile[19]
 	return text
-
 @bot.message_handler(func=lambda message:message.text is not None and len(message.text) > 6 and message.text[:7] == '/advert')
 def adverts(message):
 	if message.text[7] == '1':
@@ -141,7 +185,7 @@ def callback(call):
 	u = allvars[call.message.chat.id]
 	if call.message:
 		if call.data == 'profile_next' or call.data == 'profile_prev' or call.data == 'rematch_profiles':
-			bot.delete_message(call.message.chat.id, call.message.message_id)
+			#bot.delete_message(call.message.chat.id, call.message.message_id)
 			if call.data == 'rematch_profiles':
 				profile = db.get_profile(call.message.chat.id)
 				seeker = Seeker(profile)
@@ -166,9 +210,17 @@ def callback(call):
 				keyboard.add(button)
 			cap = profile_info(profile)
 			photo_id = db.get_profile_photo(profile[0])
-			if photo_id == '0':
-				bot.send_message(call.message.chat.id, cap, reply_markup = keyboard, parse_mode = 'Markdown')
-			else: 
+			# if photo_id == '0':
+			# 	bot.edit_message_caption(call.message.chat.id, cap, reply_markup = keyboard, parse_mode = 'Markdown')
+			# else: 
+			# 	photo = photos.download_photo(photo_id)
+			# 	bot.send_photo(call.message.chat.id, photo, caption = cap, reply_markup = keyboard, parse_mode = 'Markdown')
+			photo = photos.download_photo(photo_id)
+			ph = InputMediaPhoto(photo, caption = cap)
+			if call.data != 'rematch_profiles':
+				bot.edit_message_media(chat_id=call.message.chat.id, message_id=call.message.message_id, media = ph, reply_markup = keyboard)	
+			else:
+				bot.delete_message(call.message.chat.id, call.message.message_id)
 				photo = photos.download_photo(photo_id)
 				bot.send_photo(call.message.chat.id, photo, caption = cap, reply_markup = keyboard, parse_mode = 'Markdown')
 		elif call.data == 'delete_profile':
@@ -258,7 +310,7 @@ def name_insert_data(message):
 			bot.send_message(message.chat.id, 'Оставьте свой отзыв или предложение, отправив нам сообщение!', reply_markup=keyboard)
 		else:
 			bot.send_message(365391038, str(message.text) + '\nот ' + str(message.from_user.last_name) + ' ' + str(message.from_user.first_name) + ' @' + str(message.from_user.username) )
-			default_vars()
+			default_vars(message.chat.id)
 			keyboard = types.ReplyKeyboardMarkup(True, True)
 			keyboard.row('Добавить новое объявление', 'Просмотреть объявления')
 			keyboard.row('Мои объявления', 'Обратная связь')
