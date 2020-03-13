@@ -7,8 +7,8 @@ from database import SQL
 from users import Seeker
 import photos
 
-#token = "1149025408:AAHPU-RBBk_DPdIxl5dmC53U3EjJeu708To" #mainbot
-token = "1012837410:AAFY0lxwBFgWPIbRO-lO_MumXnlYJl-1ReQ" #testbot
+token = "1149025408:AAHPU-RBBk_DPdIxl5dmC53U3EjJeu708To" #mainbot
+#token = "1012837410:AAFY0lxwBFgWPIbRO-lO_MumXnlYJl-1ReQ" #testbot
 bot = telebot.TeleBot(token)
 db = SQL()
 allvars = {}
